@@ -13,7 +13,7 @@ class ApiService {
 
   // Default URL for Android Emulator is 10.0.2.2 to access localhost
   // For iOS/Web it is localhost. Since we are targeting web/chrome, localhost is fine.
-  final String _defaultBaseUrl = 'http://localhost:8080';
+  final String _defaultBaseUrl = 'https://pc.lightsaber.biz';
 
   ApiService._internal() {
     _dio.interceptors.add(
@@ -139,6 +139,128 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error deleting location: $e');
+    }
+  }
+
+  // Payment Type Methods
+  Future<void> addPaymentType(String paymentType) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/paymenttype/add',
+        data: {'paymenttype': paymentType},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to add payment type. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error adding payment type: $e');
+    }
+  }
+
+  Future<List<dynamic>> getPaymentTypes() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.get('$baseUrl/paymenttype/list');
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to load payment types. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching payment types: $e');
+    }
+  }
+
+  Future<void> deletePaymentType(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/paymenttype/delete',
+        data: {'id': id},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to delete payment type. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error deleting payment type: $e');
+    }
+  }
+
+  // Spending Methods
+  Future<void> addSpending(
+    double sum,
+    String location,
+    String paymentType,
+  ) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/spending/add',
+        data: {'sum': sum, 'location': location, 'paymenttype': paymentType},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to add spending. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error adding spending: $e');
+    }
+  }
+
+  Future<List<dynamic>> getSpendings({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final queryParams = <String, String>{};
+      if (startDate != null) queryParams['startDate'] = startDate;
+      if (endDate != null) queryParams['endDate'] = endDate;
+
+      final uri = Uri.parse(
+        '$baseUrl/spending/list',
+      ).replace(queryParameters: queryParams);
+      final response = await _dio.getUri(uri);
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to load spendings. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching spendings: $e');
+    }
+  }
+
+  Future<void> deleteSpending(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/spending/delete',
+        data: {'id': id},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to delete spending. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error deleting spending: $e');
     }
   }
 }

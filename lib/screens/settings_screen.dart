@@ -60,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Base URL',
                       border: OutlineInputBorder(),
-                      helperText: 'e.g., http://localhost:8080',
+                      helperText: 'e.g., https://pc.lightsaber.biz',
                     ),
                   ),
                   const SizedBox(height: 16),

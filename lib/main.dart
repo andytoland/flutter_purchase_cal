@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'screens/purchase_list_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/location_add_screen.dart';
+import 'screens/payment_type_add_screen.dart';
+import 'screens/payment_type_list_screen.dart';
+import 'screens/spending_add_screen.dart';
+import 'screens/spending_list_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -91,6 +95,58 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const LocationAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.payment),
+              title: const Text('Add Payment Type'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PaymentTypeAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('Payment Types'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PaymentTypeListScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_money),
+              title: const Text('Add Spending'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SpendingAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.money_off),
+              title: const Text('Spending List'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SpendingListScreen(),
                   ),
                 );
               },
