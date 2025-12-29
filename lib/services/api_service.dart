@@ -46,10 +46,29 @@ class ApiService {
     return await _storage.read(key: _tokenKey);
   }
 
-  Future<List<Purchase>> getPurchases() async {
+  Future<List<Purchase>> getPurchases({
+    String? startDate,
+    String? endDate,
+    String? origin,
+  }) async {
     try {
       final baseUrl = await getBaseUrl();
-      final response = await _dio.get('$baseUrl/purchase/get');
+      final queryParams = <String, String>{};
+      if (startDate != null && startDate.isNotEmpty) {
+        queryParams['startDate'] = startDate;
+      }
+      if (endDate != null && endDate.isNotEmpty) {
+        queryParams['endDate'] = endDate;
+      }
+      if (origin != null && origin.isNotEmpty) {
+        queryParams['origin'] = origin;
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/purchase/get',
+      ).replace(queryParameters: queryParams);
+
+      final response = await _dio.getUri(uri);
 
       if (response.statusCode == 200) {
         List<dynamic> data = response.data;
@@ -61,6 +80,65 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching purchases: $e');
+    }
+  }
+
+  // Location Methods
+  Future<List<dynamic>> getLocations() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.get('$baseUrl/location/list');
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to load locations. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching locations: $e');
+    }
+  }
+
+  Future<void> addLocation(
+    String name, {
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final Map<String, dynamic> data = {'name': name};
+      if (latitude != null) data['latitude'] = latitude;
+      if (longitude != null) data['longitude'] = longitude;
+
+      final response = await _dio.post('$baseUrl/location/add', data: data);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to add location. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error adding location: $e');
+    }
+  }
+
+  Future<void> deleteLocation(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/location/delete',
+        data: {'id': id},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to delete location. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error deleting location: $e');
     }
   }
 }

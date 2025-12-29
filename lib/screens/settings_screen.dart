@@ -11,28 +11,32 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _tokenController = TextEditingController();
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentUrl();
+    _loadSettings();
   }
 
-  Future<void> _loadCurrentUrl() async {
+  Future<void> _loadSettings() async {
     final url = await _apiService.getBaseUrl();
+    final token = await _apiService.getToken();
     setState(() {
       _urlController.text = url;
+      _tokenController.text = token ?? '';
       _isLoading = false;
     });
   }
 
-  Future<void> _saveUrl() async {
+  Future<void> _saveSettings() async {
     await _apiService.setBaseUrl(_urlController.text);
+    await _apiService.setToken(_tokenController.text);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('API URL Saved')));
+    ).showSnackBar(const SnackBar(content: Text('Settings Saved')));
   }
 
   @override
@@ -60,10 +64,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  TextField(
+                    controller: _tokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Bearer Token',
+                      border: OutlineInputBorder(),
+                      helperText: 'Paste your JWT token here',
+                    ),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _saveUrl,
+                      onPressed: _saveSettings,
                       child: const Text('Save'),
                     ),
                   ),

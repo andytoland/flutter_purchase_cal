@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "flutter_purchase_calc",
+            "request": "launch",
+            "type": "dart",
+            "env": {
+                "PATH": "/opt/homebrew/bin:${env:PATH}"
+            }
+        },
+        {
+            "name": "flutter_purchase_calc (profile)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+             "env": {
+                "PATH": "/opt/homebrew/bin:${env:PATH}"
+            }
+        },
+        {
+            "name": "flutter_purchase_calc (release)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release",
+             "env": {
+                "PATH": "/opt/homebrew/bin:${env:PATH}"
+            }
+        }
+    ]
+}

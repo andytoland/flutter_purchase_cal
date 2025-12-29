@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/purchase_list_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/location_add_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -77,6 +78,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const PurchaseListScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_location),
+              title: const Text('Add Location'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LocationAddScreen(),
                   ),
                 );
               },
