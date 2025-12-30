@@ -12,6 +12,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _urlController = TextEditingController();
   final TextEditingController _tokenController = TextEditingController();
+  final TextEditingController _googleMapsKeyController =
+      TextEditingController();
   bool _isLoading = true;
 
   @override
@@ -23,9 +25,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final url = await _apiService.getBaseUrl();
     final token = await _apiService.getToken();
+    final googleMapsKey = await _apiService.getGoogleMapsKey();
     setState(() {
       _urlController.text = url;
       _tokenController.text = token ?? '';
+      _googleMapsKeyController.text = googleMapsKey ?? '';
       _isLoading = false;
     });
   }
@@ -33,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     await _apiService.setBaseUrl(_urlController.text);
     await _apiService.setToken(_tokenController.text);
+    await _apiService.setGoogleMapsKey(_googleMapsKeyController.text);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
@@ -72,6 +77,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       helperText: 'Paste your JWT token here',
                     ),
                     maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _googleMapsKeyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Google Maps API Key',
+                      border: OutlineInputBorder(),
+                      helperText: 'For map functionality',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(

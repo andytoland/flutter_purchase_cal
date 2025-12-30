@@ -194,19 +194,21 @@ class _SpendingListScreenState extends State<SpendingListScreen> {
                             scrollDirection: Axis.horizontal,
                             child: DataTable(
                               columns: const [
+                                DataColumn(label: Text('Sum'), numeric: true),
                                 DataColumn(label: Text('Date')),
                                 DataColumn(label: Text('Location')),
                                 DataColumn(label: Text('Payment')),
-                                DataColumn(label: Text('Sum'), numeric: true),
                                 DataColumn(label: Text('Action')),
                               ],
                               rows: _spendings.map((s) {
                                 return DataRow(
                                   cells: [
+                                    DataCell(
+                                      Text('${s.sum.toStringAsFixed(2)} €'),
+                                    ),
                                     DataCell(Text(dateFormat.format(s.date))),
                                     DataCell(Text(s.locationName)),
                                     DataCell(Text(s.paymentType)),
-                                    DataCell(Text(s.sum.toStringAsFixed(2))),
                                     DataCell(
                                       IconButton(
                                         icon: const Icon(
@@ -227,7 +229,7 @@ class _SpendingListScreenState extends State<SpendingListScreen> {
                       ),
                       Container(
                         padding: const EdgeInsets.all(16.0),
-                        color: Colors.grey[200],
+                        color: Theme.of(context).cardColor,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -239,7 +241,7 @@ class _SpendingListScreenState extends State<SpendingListScreen> {
                               ),
                             ),
                             Text(
-                              totalSum.toStringAsFixed(2),
+                              '${totalSum.toStringAsFixed(2)} €',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,

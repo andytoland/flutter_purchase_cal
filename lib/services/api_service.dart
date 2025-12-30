@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/purchase.dart';
 
@@ -10,6 +12,7 @@ class ApiService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   static const String _baseUrlKey = 'api_base_url';
   static const String _tokenKey = 'auth_token';
+  static const String _googleMapsKey = 'google_maps_key';
 
   // Default URL for Android Emulator is 10.0.2.2 to access localhost
   // For iOS/Web it is localhost. Since we are targeting web/chrome, localhost is fine.
@@ -44,6 +47,30 @@ class ApiService {
 
   Future<String?> getToken() async {
     return await _storage.read(key: _tokenKey);
+  }
+
+  Future<void> setGoogleMapsKey(String key) async {
+    await _storage.write(key: _googleMapsKey, value: key);
+    await updateNativeGoogleMapsKey(key);
+  }
+
+  Future<String?> getGoogleMapsKey() async {
+    return await _storage.read(key: _googleMapsKey);
+  }
+
+  static const MethodChannel _mapChannel = MethodChannel(
+    'com.example.flutter_purchase_calc/maps',
+  );
+
+  Future<void> updateNativeGoogleMapsKey(String key) async {
+    if (!Platform.isIOS)
+      return; // Only iOS supports dynamic key setting this way for now
+
+    try {
+      await _mapChannel.invokeMethod('setGoogleMapsApiKey', {'key': key});
+    } on PlatformException catch (e) {
+      print("Failed to set map key: '${e.message}'.");
+    }
   }
 
   Future<List<Purchase>> getPurchases({

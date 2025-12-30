@@ -6,6 +6,7 @@ import 'screens/payment_type_add_screen.dart';
 import 'screens/payment_type_list_screen.dart';
 import 'screens/spending_add_screen.dart';
 import 'screens/spending_list_screen.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,8 +20,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Purchase Calc',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.black,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+        ),
       ),
       home: const HomeScreen(),
     );
@@ -35,32 +43,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _initMapKey();
   }
 
-  void _onItemTapped(int index) {
-    // Handle navigation logic here if using bottom nav,
-    // but we are using drawer so this might not be needed or we can switch body
+  Future<void> _initMapKey() async {
+    final apiService = ApiService();
+    final key = await apiService.getGoogleMapsKey();
+    if (key != null && key.isNotEmpty) {
+      await apiService.updateNativeGoogleMapsKey(key);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Purchase Calc'),
+        backgroundColor: Colors.black,
+        title: const Text(
+          'Purchase Calc',
+          style: TextStyle(color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+              decoration: BoxDecoration(color: Colors.black),
               child: Text(
                 'Menu',
                 style: TextStyle(color: Colors.white, fontSize: 24),
@@ -167,27 +180,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to Purchase Calc!',
-              style: TextStyle(fontSize: 20),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/bull.png',
+            fit: BoxFit.cover,
+            color: Colors.black.withOpacity(0.3),
+            colorBlendMode: BlendMode.darken,
+          ),
+          const Center(
+            child: Text(
+              'Purchase Calc',
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    offset: Offset(2.0, 2.0),
+                    blurRadius: 3.0,
+                    color: Colors.black,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

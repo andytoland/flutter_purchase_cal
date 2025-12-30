@@ -29,6 +29,22 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
   void initState() {
     super.initState();
     _fetchLocations();
+    _checkMapKey();
+  }
+
+  Future<void> _checkMapKey() async {
+    final key = await _apiService.getGoogleMapsKey();
+    if (key == null || key.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please set Google Maps API Key in Settings for map functionality',
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   @override

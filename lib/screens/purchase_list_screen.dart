@@ -79,8 +79,8 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     _purchases.sort((a, b) {
       int comparison = 0;
       switch (_sortColumnIndex) {
-        case 0: // ID
-          comparison = a.id.compareTo(b.id);
+        case 0: // Sum
+          comparison = a.sum.compareTo(b.sum);
           break;
         case 1: // Date
           comparison = a.date.compareTo(b.date);
@@ -90,10 +90,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
             b.merchant.toLowerCase(),
           );
           break;
-        case 3: // Sum
-          comparison = a.sum.compareTo(b.sum);
-          break;
-        case 4: // Origin
+        case 3: // Origin
           comparison = a.origin.toLowerCase().compareTo(b.origin.toLowerCase());
           break;
       }
@@ -278,23 +275,21 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
           sortColumnIndex: _sortColumnIndex,
           sortAscending: _sortAscending,
           columns: [
-            DataColumn(label: const Text('ID'), numeric: true, onSort: _onSort),
-            DataColumn(label: const Text('Date'), onSort: _onSort),
-            DataColumn(label: const Text('Merchant'), onSort: _onSort),
             DataColumn(
               label: const Text('Sum'),
               numeric: true,
               onSort: _onSort,
             ),
+            DataColumn(label: const Text('Date'), onSort: _onSort),
+            DataColumn(label: const Text('Merchant'), onSort: _onSort),
             DataColumn(label: const Text('Origin'), onSort: _onSort),
           ],
           rows: _purchases.map((purchase) {
             return DataRow(
               cells: [
-                DataCell(Text(purchase.id.toString())),
+                DataCell(Text('${purchase.sum.toStringAsFixed(2)} €')),
                 DataCell(Text(DateFormat('yyyy-MM-dd').format(purchase.date))),
                 DataCell(Text(purchase.merchant)),
-                DataCell(Text(purchase.sum.toStringAsFixed(2))),
                 DataCell(Text(purchase.origin)),
               ],
             );
