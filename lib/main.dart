@@ -6,6 +6,8 @@ import 'screens/payment_type_add_screen.dart';
 import 'screens/payment_type_list_screen.dart';
 import 'screens/spending_add_screen.dart';
 import 'screens/spending_list_screen.dart';
+import 'screens/visit_add_screen.dart';
+import 'screens/visit_list_screen.dart';
 import 'services/api_service.dart';
 
 void main() {
@@ -108,6 +110,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const LocationAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.place),
+              title: const Text('Add Visit'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VisitAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('List Visits'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VisitListScreen(),
                   ),
                 );
               },
