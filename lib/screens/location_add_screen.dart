@@ -178,7 +178,20 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
     });
 
     try {
-      final center = _selectedLocation ?? _initialPosition;
+      // Use selected location, or current map center if available, else initial
+      LatLng center = _initialPosition;
+
+      if (_selectedLocation != null) {
+        center = _selectedLocation!;
+      } else if (_mapController != null) {
+        // Try to get current camera target
+        final bounds = await _mapController!.getVisibleRegion();
+        final lat = (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
+        final lng =
+            (bounds.northeast.longitude + bounds.southwest.longitude) / 2;
+        center = LatLng(lat, lng);
+      }
+
       final results = await _apiService.searchNearbyPlaces(
         query,
         center.latitude,

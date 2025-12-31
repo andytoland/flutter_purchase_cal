@@ -369,9 +369,10 @@ class ApiService {
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
         queryParameters: {
           'location': '$lat,$lng',
-          'radius': '5000', // 5km radius
+          'rankby': 'distance', // Sort strictly by distance
           'keyword': keyword,
           'key': apiKey,
+          // 'radius': '5000', // Cannot specify radius when rankby=distance
         },
       );
 
