@@ -47,9 +47,14 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
     }
   }
 
+  final TextEditingController _searchController = TextEditingController();
+  List<dynamic> _searchResults = [];
+  bool _isSearching = false;
+
   @override
   void dispose() {
     _nameController.dispose();
+    _searchController.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -78,8 +83,6 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    // Optional: Require location? For now, optional.
-
     setState(() {
       _isActionLoading = true;
       _errorMessage = null;
@@ -94,6 +97,7 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
       _nameController.clear();
       setState(() {
         _selectedLocation = null;
+        _selectedLocation = null; // duplicated but harmless
       });
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -144,7 +148,6 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Location deleted!')));
-      // Optimistically remove from list
       setState(() {
         _locations.removeWhere((loc) => loc.id == id);
       });
@@ -165,6 +168,60 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
     });
   }
 
+  Future<void> _performSearch() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isSearching = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final center = _selectedLocation ?? _initialPosition;
+      final results = await _apiService.searchNearbyPlaces(
+        query,
+        center.latitude,
+        center.longitude,
+      );
+
+      setState(() {
+        _searchResults = results;
+        if (results.isEmpty) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('No results found')));
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isSearching = false;
+      });
+    }
+  }
+
+  void _selectPlace(dynamic place) {
+    final geometry = place['geometry']['location'];
+    final lat = geometry['lat'];
+    final lng = geometry['lng'];
+    final name = place['name'];
+
+    final newPos = LatLng(lat, lng);
+
+    setState(() {
+      _selectedLocation = newPos;
+      _nameController.text = name;
+      _searchResults = [];
+      _searchController.clear();
+    });
+
+    _mapController?.animateCamera(CameraUpdate.newLatLng(newPos));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,7 +229,7 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
       body: Column(
         children: [
           Expanded(
-            flex: 1, // Map takes 1/3 of space roughly or half
+            flex: 1,
             child: GoogleMap(
               initialCameraPosition: const CameraPosition(
                 target: _initialPosition,
@@ -198,6 +255,72 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
+                  // Search Bar
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            labelText: 'Search nearby (e.g. Tesco)',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onSubmitted: (_) => _performSearch(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _isSearching ? null : _performSearch,
+                        icon: _isSearching
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.search),
+                      ),
+                    ],
+                  ),
+
+                  // Search Results
+                  if (_searchResults.isNotEmpty)
+                    Container(
+                      height: 150,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.white,
+                      ),
+                      child: Scrollbar(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _searchResults.length,
+                          itemBuilder: (context, index) {
+                            final place = _searchResults[index];
+                            return ListTile(
+                              dense: true,
+                              title: Text(
+                                place['name'],
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                              subtitle: Text(
+                                place['vicinity'] ?? '',
+                                style: const TextStyle(color: Colors.black87),
+                              ),
+                              onTap: () => _selectPlace(place),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),

@@ -9,6 +9,7 @@ class ApiService {
   factory ApiService() => _instance;
 
   final Dio _dio = Dio();
+  final Dio _externalDio = Dio();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   static const String _baseUrlKey = 'api_base_url';
   static const String _tokenKey = 'auth_token';
@@ -349,6 +350,47 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error deleting visit: $e');
+    }
+  }
+
+  // Google Places API
+  Future<List<dynamic>> searchNearbyPlaces(
+    String keyword,
+    double lat,
+    double lng,
+  ) async {
+    try {
+      final apiKey = await getGoogleMapsKey();
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('Google Maps API Key not set');
+      }
+
+      final response = await _externalDio.get(
+        'https://maps.googleapis.com/maps/api/place/nearbysearch/json',
+        queryParameters: {
+          'location': '$lat,$lng',
+          'radius': '5000', // 5km radius
+          'keyword': keyword,
+          'key': apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'OK' || data['status'] == 'ZERO_RESULTS') {
+          return data['results'];
+        } else {
+          throw Exception(
+            'Places API Error: ${data['status']} - ${data['error_message'] ?? ''}',
+          );
+        }
+      } else {
+        throw Exception(
+          'Failed to search places. Status: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error searching places: $e');
     }
   }
 }
