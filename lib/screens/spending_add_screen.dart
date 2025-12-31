@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/location.dart';
@@ -132,12 +133,26 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
+                        signed: false,
                       ),
+                      // Replace commas with dots immediately on typing
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final newText = newValue.text.replaceAll(',', '.');
+                          return newValue.copyWith(
+                            text: newText,
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a sum';
                         }
-                        if (double.tryParse(value) == null) {
+                        // tryParse handles the dot we ensured nicely
+                        if (double.tryParse(value.replaceAll(',', '.')) ==
+                            null) {
                           return 'Please enter a valid number';
                         }
                         return null;
