@@ -394,4 +394,61 @@ class ApiService {
       throw Exception('Error searching places: $e');
     }
   }
+
+  // Daily Budget Methods
+  Future<void> addDailyBudget(double sum, DateTime date) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/dailybudget/create',
+        data: {'sum': sum, 'time': date.toIso8601String()},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to add daily budget. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error adding daily budget: $e');
+    }
+  }
+
+  Future<List<dynamic>> getDailyBudgets(DateTime date) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/dailybudget/listbudget',
+        data: {'date': date.toIso8601String()},
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to load daily budgets. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching daily budgets: $e');
+    }
+  }
+
+  Future<void> deleteDailyBudget(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/dailybudget/delete',
+        data: {'id': id},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to delete daily budget. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error deleting daily budget: $e');
+    }
+  }
 }

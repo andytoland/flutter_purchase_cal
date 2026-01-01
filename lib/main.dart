@@ -10,6 +10,9 @@ import 'screens/visit_add_screen.dart';
 import 'screens/visit_list_screen.dart';
 import 'services/api_service.dart';
 
+import 'screens/daily_budget_add_screen.dart';
+import 'screens/daily_budget_list_screen.dart'; // Import the new screens
+
 void main() {
   runApp(const MyApp());
 }
@@ -188,6 +191,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SpendingListScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_card),
+              title: const Text('Add Daily Budget'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DailyBudgetAddScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet),
+              title: const Text('List Daily Budgets'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DailyBudgetListScreen(),
                   ),
                 );
               },
