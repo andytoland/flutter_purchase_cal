@@ -206,7 +206,9 @@ class _SpendingListScreenState extends State<SpendingListScreen> {
                                     DataCell(
                                       Text('${s.sum.toStringAsFixed(2)} €'),
                                     ),
-                                    DataCell(Text(dateFormat.format(s.date))),
+                                    DataCell(
+                                      Text(dateFormat.format(s.date.toLocal())),
+                                    ),
                                     DataCell(Text(s.locationName)),
                                     DataCell(Text(s.paymentType)),
                                     DataCell(

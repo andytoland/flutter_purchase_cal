@@ -196,7 +196,9 @@ class _VisitListScreenState extends State<VisitListScreen> {
                         rows: _visits.map((v) {
                           return DataRow(
                             cells: [
-                              DataCell(Text(dateFormat.format(v.date))),
+                              DataCell(
+                                Text(dateFormat.format(v.date.toLocal())),
+                              ),
                               DataCell(Text(v.locationName)),
                               DataCell(
                                 SizedBox(
