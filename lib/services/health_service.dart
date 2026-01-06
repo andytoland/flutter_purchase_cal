@@ -73,22 +73,24 @@ class HealthService {
       if (point.value is WorkoutHealthValue) {
         WorkoutHealthValue workout = point.value as WorkoutHealthValue;
 
-        // Filter for running
-        if (workout.workoutActivityType == HealthWorkoutActivityType.RUNNING) {
-          final workoutData = {
-            'externalId': point.uuid, // It's .uuid in HealthDataPoint
-            'type': 'RUNNING',
-            'date': point.dateFrom.toIso8601String(),
-            'duration': point.dateTo.difference(point.dateFrom).inMinutes,
-            'distance': workout.totalDistance,
-            'calories': workout.totalEnergyBurned,
-          };
+        // Map activity type to string (e.g., "RUNNING", "WALKING", "YOGA")
+        String typeStr = workout.workoutActivityType
+            .toString()
+            .split('.')
+            .last
+            .toUpperCase();
 
-          print(
-            "Syncing running workout: ${workoutData['date']} - ${workoutData['distance']}m",
-          );
-          await apiService.syncWorkout(workoutData);
-        }
+        final workoutData = {
+          'externalId': point.uuid,
+          'type': typeStr,
+          'date': point.dateFrom.toIso8601String(),
+          'duration': point.dateTo.difference(point.dateFrom).inMinutes,
+          'distance': workout.totalDistance,
+          'calories': workout.totalEnergyBurned,
+        };
+
+        print("Syncing $typeStr workout: ${workoutData['date']}");
+        await apiService.syncWorkout(workoutData);
       }
     }
   }

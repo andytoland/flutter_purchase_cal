@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 
-class WorkoutListScreen extends StatefulWidget {
-  const WorkoutListScreen({super.key});
+class ExerciseListScreen extends StatefulWidget {
+  const ExerciseListScreen({super.key});
 
   @override
-  State<WorkoutListScreen> createState() => _WorkoutListScreenState();
+  State<ExerciseListScreen> createState() => _ExerciseListScreenState();
 }
 
-class _WorkoutListScreenState extends State<WorkoutListScreen> {
+class _ExerciseListScreenState extends State<ExerciseListScreen> {
   final ApiService _apiService = ApiService();
   List<dynamic> _workouts = [];
   bool _isLoading = true;
@@ -32,7 +32,8 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
       final workouts = await _apiService.getWorkouts(dateStr);
       setState(() {
-        _workouts = workouts.where((w) => w['type'] == 'RUNNING').toList();
+        // Filter for NOT running
+        _workouts = workouts.where((w) => w['type'] != 'RUNNING').toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -46,7 +47,7 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Running History')),
+      appBar: AppBar(title: const Text('Exercise History')),
       body: Column(
         children: [
           if (_isLoading)
@@ -63,14 +64,13 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
           else
             Expanded(
               child: _workouts.isEmpty
-                  ? const Center(child: Text('No running sessions found.'))
+                  ? const Center(child: Text('No exercises found.'))
                   : ListView.builder(
                       itemCount: _workouts.length,
                       itemBuilder: (context, index) {
                         final item = _workouts[index];
                         final date = DateTime.parse(item['date']);
-                        final distance =
-                            (item['distance'] ?? 0) / 1000; // Convert to km
+                        final type = item['type'] ?? 'OTHER';
                         final duration = item['duration'] ?? 0;
                         final calories = item['calories'] ?? 0;
 
@@ -81,21 +81,19 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
                           ),
                           child: ListTile(
                             leading: const CircleAvatar(
-                              backgroundColor: Colors.orange,
+                              backgroundColor: Colors.blue,
                               child: Icon(
-                                Icons.directions_run,
+                                Icons.fitness_center,
                                 color: Colors.white,
                               ),
                             ),
                             title: Text(
-                              DateFormat('yyyy-MM-dd HH:mm').format(date),
+                              '${DateFormat('yyyy-MM-dd HH:mm').format(date)} - $type',
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '${distance.toStringAsFixed(2)} km  •  $duration min',
-                                ),
+                                Text('$duration min'),
                                 if (item['info'] != null &&
                                     (item['info'] as String).isNotEmpty)
                                   Text(
