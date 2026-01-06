@@ -60,5 +60,10 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.example.flutter_purchase_calc.healthSyncTask</string>
+		<string>be.tramckrijte.workmanager.BackgroundTask</string>
+	</array>
 </dict>
 </plist>
