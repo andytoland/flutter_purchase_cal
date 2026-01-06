@@ -469,4 +469,24 @@ class ApiService {
       throw Exception('Error syncing steps: $e');
     }
   }
+
+  Future<List<dynamic>> getDailySteps(String startDate) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/steps',
+        data: {'date': startDate},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception(
+          'Failed to fetch daily steps. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching daily steps: $e');
+    }
+  }
 }
