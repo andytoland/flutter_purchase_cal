@@ -16,6 +16,7 @@ import 'services/api_service.dart';
 import 'screens/daily_budget_add_screen.dart';
 import 'screens/daily_budget_list_screen.dart';
 import 'screens/daily_steps_list_screen.dart';
+import 'screens/workout_list_screen.dart';
 
 const String healthSyncTask =
     "com.example.flutter_purchase_calc.healthSyncTask";
@@ -263,6 +264,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const DailyStepsListScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.directions_run),
+              title: const Text('Running History'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WorkoutListScreen(),
                   ),
                 );
               },

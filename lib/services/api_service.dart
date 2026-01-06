@@ -489,4 +489,42 @@ class ApiService {
       throw Exception('Error fetching daily steps: $e');
     }
   }
+
+  Future<void> syncWorkout(Map<String, dynamic> workoutData) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/sync-workout',
+        data: workoutData,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to sync workout. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error syncing workout: $e');
+    }
+  }
+
+  Future<List<dynamic>> getWorkouts(String startDate) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/workouts',
+        data: {'date': startDate},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as List<dynamic>;
+      } else {
+        throw Exception(
+          'Failed to fetch workouts. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching workouts: $e');
+    }
+  }
 }

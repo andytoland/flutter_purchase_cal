@@ -11,7 +11,7 @@ class HealthService {
 
   Future<bool> requestPermissions() async {
     if (kIsWeb) return false;
-    var types = [HealthDataType.STEPS];
+    var types = [HealthDataType.STEPS, HealthDataType.WORKOUT];
 
     bool? hasPermission = await health.hasPermissions(types);
     if (hasPermission == true) return true;
@@ -32,13 +32,10 @@ class HealthService {
       final apiService = ApiService();
       final now = DateTime.now();
 
-      // Sync the last 7 days to ensure no data is missed
       for (int i = 0; i < 7; i++) {
         final date = now.subtract(Duration(days: i));
         final midnight = DateTime(date.year, date.month, date.day);
         final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
-        // For today, we only fetch up to "now"
         final endTime = i == 0 ? now : endOfDay;
 
         int? steps = await health.getTotalStepsInInterval(midnight, endTime);
@@ -46,13 +43,53 @@ class HealthService {
         if (steps != null && steps > 0) {
           final dateStr =
               "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-          print("Syncing $steps steps for $dateStr");
           await apiService.syncSteps(dateStr, steps);
         }
       }
-      print("Health sync completed successfully for last 7 days");
+
+      // Also sync workouts
+      await syncWorkouts();
+
+      print("Health sync completed successfully");
     } catch (e) {
       print("Error syncing health data: $e");
+    }
+  }
+
+  Future<void> syncWorkouts() async {
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+    // Fetch individual workout sessions using named parameters
+    List<HealthDataPoint> healthData = await health.getHealthDataFromTypes(
+      types: [HealthDataType.WORKOUT],
+      startTime: sevenDaysAgo,
+      endTime: now,
+    );
+
+    final apiService = ApiService();
+
+    for (var point in healthData) {
+      if (point.value is WorkoutHealthValue) {
+        WorkoutHealthValue workout = point.value as WorkoutHealthValue;
+
+        // Filter for running
+        if (workout.workoutActivityType == HealthWorkoutActivityType.RUNNING) {
+          final workoutData = {
+            'externalId': point.uuid, // It's .uuid in HealthDataPoint
+            'type': 'RUNNING',
+            'date': point.dateFrom.toIso8601String(),
+            'duration': point.dateTo.difference(point.dateFrom).inMinutes,
+            'distance': workout.totalDistance,
+            'calories': workout.totalEnergyBurned,
+          };
+
+          print(
+            "Syncing running workout: ${workoutData['date']} - ${workoutData['distance']}m",
+          );
+          await apiService.syncWorkout(workoutData);
+        }
+      }
     }
   }
 }
