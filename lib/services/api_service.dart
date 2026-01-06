@@ -512,7 +512,7 @@ class ApiService {
     try {
       final baseUrl = await getBaseUrl();
       final response = await _dio.post(
-        '$baseUrl/fitness/workouts',
+        '$baseUrl/fitness/workout',
         data: {'date': startDate},
       );
 
