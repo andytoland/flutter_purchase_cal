@@ -90,8 +90,22 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
                             title: Text(
                               DateFormat('yyyy-MM-dd HH:mm').format(date),
                             ),
-                            subtitle: Text(
-                              '${distance.toStringAsFixed(2)} km  •  $duration min',
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${distance.toStringAsFixed(2)} km  •  $duration min',
+                                ),
+                                if (item['info'] != null &&
+                                    (item['info'] as String).isNotEmpty)
+                                  Text(
+                                    item['info'],
+                                    style: const TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
                             ),
                             trailing: Text('${calories.toInt()} kcal'),
                           ),
