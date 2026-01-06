@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:workmanager/workmanager.dart';
 import 'services/health_service.dart';
 import 'screens/purchase_list_screen.dart';
@@ -77,6 +78,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _todaySteps = 0;
+  double _todaySpent = 0.0;
+  bool _isLoadingStats = true;
+
   @override
   void initState() {
     super.initState();
@@ -84,9 +89,51 @@ class _HomeScreenState extends State<HomeScreen> {
     _syncHealth();
   }
 
+  Future<void> _fetchTodayData() async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final apiService = ApiService();
+      final now = DateTime.now();
+      final dateStr = DateFormat('yyyy-MM-dd').format(now);
+
+      // Fetch steps
+      final stepsData = await apiService.getDailySteps(dateStr);
+      if (stepsData.isNotEmpty) {
+        // Find the entry for today
+        final todayEntry = stepsData.firstWhere(
+          (e) => (e['date'] as String).startsWith(dateStr),
+          orElse: () => null,
+        );
+        if (todayEntry != null) {
+          setState(() {
+            _todaySteps = int.parse(todayEntry['steps'].toString());
+          });
+        }
+      }
+
+      // Fetch spending
+      final spendingData = await apiService.getSpendings(
+        startDate: dateStr,
+        endDate: dateStr,
+      );
+      double total = 0;
+      for (var s in spendingData) {
+        total += (s['sum'] as num).toDouble();
+      }
+      setState(() {
+        _todaySpent = total;
+      });
+    } catch (e) {
+      print("Error fetching today's data: $e");
+    } finally {
+      setState(() => _isLoadingStats = false);
+    }
+  }
+
   Future<void> _syncHealth() async {
     final healthService = HealthService();
     await healthService.syncSteps();
+    await _fetchTodayData();
   }
 
   Future<void> _initMapKey() async {
@@ -320,21 +367,76 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.black.withOpacity(0.3),
             colorBlendMode: BlendMode.darken,
           ),
-          const Center(
-            child: Text(
-              'Purchase Calc',
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    offset: Offset(2.0, 2.0),
-                    blurRadius: 3.0,
-                    color: Colors.black,
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Purchase Calc',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(2.0, 2.0),
+                        blurRadius: 3.0,
+                        color: Colors.black,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                if (_isLoadingStats)
+                  const CircularProgressIndicator(color: Colors.white)
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.directions_walk,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Steps: $_todaySteps',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.attach_money, color: Colors.green),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Spent: ${_todaySpent.toStringAsFixed(2)} €',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
           Positioned(
@@ -348,6 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SnackBar(content: Text('Syncing Health Data...')),
                   );
                   await HealthService().syncSteps();
+                  await _fetchTodayData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Step Sync Completed')),
                   );
