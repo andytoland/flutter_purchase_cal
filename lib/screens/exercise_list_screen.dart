@@ -34,7 +34,10 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
       final endStr = DateFormat('yyyy-MM-dd').format(_endDate);
       final workouts = await _apiService.getWorkouts(startStr, endDate: endStr);
       setState(() {
-        _workouts = workouts.where((w) => w['type'] != 'RUNNING').toList();
+        // Filter for NOT starting with RUNNING
+        _workouts = workouts
+            .where((w) => !(w['type'] as String).startsWith('RUNNING'))
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
