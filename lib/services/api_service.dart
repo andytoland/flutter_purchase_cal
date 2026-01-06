@@ -508,12 +508,12 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> getWorkouts(String startDate) async {
+  Future<List<dynamic>> getWorkouts(String startDate, {String? endDate}) async {
     try {
       final baseUrl = await getBaseUrl();
       final response = await _dio.post(
         '$baseUrl/fitness/workout',
-        data: {'date': startDate},
+        data: {'date': startDate, if (endDate != null) 'endDate': endDate},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

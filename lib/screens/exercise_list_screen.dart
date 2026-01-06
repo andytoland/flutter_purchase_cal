@@ -14,7 +14,8 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
   List<dynamic> _workouts = [];
   bool _isLoading = true;
   String _error = '';
-  DateTime _selectedDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 11));
+  DateTime _endDate = DateTime.now();
 
   @override
   void initState() {
@@ -29,10 +30,10 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
     });
 
     try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      final workouts = await _apiService.getWorkouts(dateStr);
+      final startStr = DateFormat('yyyy-MM-dd').format(_startDate);
+      final endStr = DateFormat('yyyy-MM-dd').format(_endDate);
+      final workouts = await _apiService.getWorkouts(startStr, endDate: endStr);
       setState(() {
-        // Filter for NOT running
         _workouts = workouts.where((w) => w['type'] != 'RUNNING').toList();
         _isLoading = false;
       });
@@ -44,12 +45,71 @@ class _ExerciseListScreenState extends State<ExerciseListScreen> {
     }
   }
 
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+      });
+      _fetchWorkouts();
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+      _fetchWorkouts();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Exercise History')),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      TextButton(
+                        onPressed: () => _selectStartDate(context),
+                        child: Text(
+                          'From: ${DateFormat('yyyy-MM-dd').format(_startDate)}',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _selectEndDate(context),
+                        child: Text(
+                          'To: ${DateFormat('yyyy-MM-dd').format(_endDate)}',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _fetchWorkouts,
+                ),
+              ],
+            ),
+          ),
           if (_isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (_error.isNotEmpty)
