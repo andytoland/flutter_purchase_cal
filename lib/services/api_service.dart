@@ -451,4 +451,22 @@ class ApiService {
       throw Exception('Error deleting daily budget: $e');
     }
   }
+
+  Future<void> syncSteps(String date, int steps) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/sync-steps',
+        data: {'date': date, 'steps': steps},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to sync steps. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error syncing steps: $e');
+    }
+  }
 }

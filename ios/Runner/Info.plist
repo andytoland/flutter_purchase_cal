@@ -51,5 +51,14 @@
 	</array>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We need access to your health data to track your daily steps.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We need access to your health data to track your daily steps.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

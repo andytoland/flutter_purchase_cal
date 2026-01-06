@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:workmanager/workmanager.dart';
+import 'services/health_service.dart';
 import 'screens/purchase_list_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/location_add_screen.dart';
@@ -13,7 +16,30 @@ import 'services/api_service.dart';
 import 'screens/daily_budget_add_screen.dart';
 import 'screens/daily_budget_list_screen.dart'; // Import the new screens
 
-void main() {
+const String healthSyncTask =
+    "com.example.flutter_purchase_calc.healthSyncTask";
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    final healthService = HealthService();
+    await healthService.syncSteps();
+    return Future.value(true);
+  });
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: kDebugMode);
+
+  await Workmanager().registerPeriodicTask(
+    "1",
+    healthSyncTask,
+    frequency: const Duration(hours: 1),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+
   runApp(const MyApp());
 }
 
@@ -52,6 +78,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initMapKey();
+    _syncHealth();
+  }
+
+  Future<void> _syncHealth() async {
+    final healthService = HealthService();
+    await healthService.syncSteps();
   }
 
   Future<void> _initMapKey() async {
@@ -260,6 +292,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.black,
                   ),
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Syncing Health Data...')),
+                  );
+                  await HealthService().syncSteps();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Step Sync Completed')),
+                  );
+                },
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Health Data'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
               ),
             ),
           ),
