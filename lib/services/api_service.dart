@@ -16,6 +16,7 @@ class ApiService {
   static const String _baseUrlKey = 'api_base_url';
   static const String _tokenKey = 'auth_token';
   static const String _googleMapsKey = 'google_maps_key';
+  static const String _billingAccountIdKey = 'gcp_billing_account_id';
 
   // Default URL for Android Emulator is 10.0.2.2 to access localhost
   // For iOS/Web it is localhost. Since we are targeting web/chrome, localhost is fine.
@@ -59,6 +60,14 @@ class ApiService {
 
   Future<String?> getGoogleMapsKey() async {
     return await _storage.read(key: _googleMapsKey);
+  }
+
+  Future<void> setBillingAccountId(String id) async {
+    await _storage.write(key: _billingAccountIdKey, value: id);
+  }
+
+  Future<String?> getBillingAccountId() async {
+    return await _storage.read(key: _billingAccountIdKey);
   }
 
   static const MethodChannel _mapChannel = MethodChannel(
@@ -574,6 +583,27 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching workouts: $e');
+    }
+  }
+
+  // GCP Billing Methods
+  Future<Map<String, dynamic>> getGCPBilling(String billingAccountId) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/gcp/billing',
+        data: {'billingAccountId': billingAccountId},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to fetch GCP billing. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching GCP billing: $e');
     }
   }
 }

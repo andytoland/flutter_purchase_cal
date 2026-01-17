@@ -20,6 +20,7 @@ import 'screens/daily_budget_list_screen.dart';
 import 'screens/daily_steps_list_screen.dart';
 import 'screens/workout_list_screen.dart';
 import 'screens/exercise_list_screen.dart';
+import 'screens/gcp_billing_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'models/location.dart' as model;
 import 'theme/theme_manager.dart';
@@ -620,6 +621,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const DailyBudgetListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cloud),
+                  title: const Text('GCP Billing'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GCPBillingScreen(),
                       ),
                     );
                   },

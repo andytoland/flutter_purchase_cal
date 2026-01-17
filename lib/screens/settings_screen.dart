@@ -16,6 +16,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _tokenController = TextEditingController();
   final TextEditingController _googleMapsKeyController =
       TextEditingController();
+  final TextEditingController _billingAccountIdController =
+      TextEditingController();
   bool _isLoading = true;
 
   @override
@@ -28,10 +30,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final url = await _apiService.getBaseUrl();
     final token = await _apiService.getToken();
     final googleMapsKey = await _apiService.getGoogleMapsKey();
+    final billingAccountId = await _apiService.getBillingAccountId();
     setState(() {
       _urlController.text = url;
       _tokenController.text = token ?? '';
       _googleMapsKeyController.text = googleMapsKey ?? '';
+      _billingAccountIdController.text = billingAccountId ?? '';
       _isLoading = false;
     });
   }
@@ -40,6 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _apiService.setBaseUrl(_urlController.text);
     await _apiService.setToken(_tokenController.text);
     await _apiService.setGoogleMapsKey(_googleMapsKeyController.text);
+    await _apiService.setBillingAccountId(_billingAccountIdController.text);
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
@@ -87,6 +92,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       labelText: 'Google Maps API Key',
                       border: OutlineInputBorder(),
                       helperText: 'For map functionality',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _billingAccountIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'GCP Billing Account ID',
+                      border: OutlineInputBorder(),
+                      helperText: 'e.g., 01XXXX-XXXXXX-XXXXXX',
                     ),
                   ),
                   const SizedBox(height: 16),
