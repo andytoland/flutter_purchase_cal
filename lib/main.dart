@@ -19,6 +19,8 @@ import 'screens/daily_budget_list_screen.dart';
 import 'screens/daily_steps_list_screen.dart';
 import 'screens/workout_list_screen.dart';
 import 'screens/exercise_list_screen.dart';
+import 'package:geolocator/geolocator.dart';
+import 'models/location.dart' as model;
 
 const String healthSyncTask =
     "com.example.flutter_purchase_calc.healthSyncTask";
@@ -190,6 +192,142 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _todaySpent = total;
     });
+  }
+
+  Future<void> _quickAddVisit() async {
+    // 1. Check/Request Geolocation Permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permissions are denied')),
+          );
+        }
+        return;
+      }
+    }
+
+    setState(() => _isLoadingStats = true);
+    try {
+      // 2. Get Current Position
+      final position = await Geolocator.getCurrentPosition();
+      print("Current Position: ${position.latitude}, ${position.longitude}");
+
+      // 3. Get Locations
+      final apiService = ApiService();
+      final List<dynamic> locData = await apiService.getLocations();
+      final locations = locData.map((json) => model.Location.fromJson(json)).toList();
+
+      // 4. Filter and Sort
+      List<Map<String, dynamic>> nearby = [];
+      List<model.Location> others = [];
+
+      for (var loc in locations) {
+        if (loc.latitude != null && loc.longitude != null) {
+          double distance = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            loc.latitude!,
+            loc.longitude!,
+          );
+          if (distance <= 200) {
+            nearby.add({'location': loc, 'distance': distance});
+          } else {
+            others.add(loc);
+          }
+        } else {
+          others.add(loc);
+        }
+      }
+
+      nearby.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
+      others.sort((a, b) => a.name.compareTo(b.name));
+
+      // 5. Show Selection UI
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  nearby.isNotEmpty ? 'Places Nearby' : 'All Places',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      if (nearby.isNotEmpty) ...[
+                        ...nearby.map((n) {
+                          final loc = n['location'] as model.Location;
+                          final dist = n['distance'] as double;
+                          return ListTile(
+                            leading: const Icon(Icons.location_on, color: Colors.green),
+                            title: Text(loc.name),
+                            subtitle: Text('${dist.toStringAsFixed(0)} meters away'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _submitVisit(loc.id, loc.name);
+                            },
+                          );
+                        }),
+                        const Divider(),
+                        const Text('Other Places', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                      ...others.map((loc) => ListTile(
+                            leading: const Icon(Icons.location_on_outlined),
+                            title: Text(loc.name),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _submitVisit(loc.id, loc.name);
+                            },
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print("Error in quick visit: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _submitVisit(int locationId, String locationName) async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final apiService = ApiService();
+      await apiService.addVisit(locationId, 'Quick visit from home screen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Visit to $locationName recorded!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to record visit: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
   }
 
   Future<void> _syncHealth() async {
@@ -497,6 +635,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _quickAddVisit,
+                          icon: const Icon(Icons.add_location_alt),
+                          label: const Text('Add Visit'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ],
                     ),
