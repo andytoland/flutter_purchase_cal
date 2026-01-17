@@ -46,22 +46,45 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
       _errorMessage = null;
     });
 
+    // 1. Try Cache
+    try {
+      final cachedLocs = await _apiService.getCachedLocations();
+      final cachedPts = await _apiService.getCachedPaymentTypes();
+
+      if (mounted && (cachedLocs != null || cachedPts != null)) {
+        setState(() {
+          if (cachedLocs != null) {
+            _locations = cachedLocs.map((json) => Location.fromJson(json)).toList();
+          }
+          if (cachedPts != null) {
+            _paymentTypes = cachedPts.map((json) => PaymentType.fromJson(json)).toList();
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Cache error: $e");
+    }
+
+    // 2. Fetch Network
     try {
       final locData = await _apiService.getLocations();
       final ptData = await _apiService.getPaymentTypes();
 
-      setState(() {
-        _locations = locData.map((json) => Location.fromJson(json)).toList();
-        _paymentTypes = ptData
-            .map((json) => PaymentType.fromJson(json))
-            .toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _locations = locData.map((json) => Location.fromJson(json)).toList();
+          _paymentTypes = ptData.map((json) => PaymentType.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted && _locations.isEmpty) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

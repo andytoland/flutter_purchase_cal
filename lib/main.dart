@@ -97,71 +97,99 @@ class _HomeScreenState extends State<HomeScreen> {
 
     print("--- Fetching Today's Data ($dateStr) ---");
 
-    // 1. Fetch Steps
+    // 1. Load from Cache first for immediate UI feedback
     try {
-      final stepsData = await apiService.getDailySteps(dateStr);
-      if (stepsData.isNotEmpty) {
-        final todayEntry = stepsData.firstWhere(
-          (e) => (e['date'] as String).startsWith(dateStr),
-          orElse: () => null,
-        );
-        if (todayEntry != null) {
-          setState(() {
-            _todaySteps = int.parse(todayEntry['steps'].toString());
-          });
-          print("Steps fetched: $_todaySteps");
-        }
+      final cachedSteps = await apiService.getCachedDailySteps(dateStr);
+      if (cachedSteps != null) {
+        _processStepsData(cachedSteps, dateStr);
+        print("Steps loaded from cache");
       }
-    } catch (e) {
-      print("Error fetching today's steps: $e");
-    }
 
-    // 2. Fetch Spending
-    try {
       final startDate = now.subtract(const Duration(days: 2));
       final endDate = now.add(const Duration(days: 1));
       final startStr = DateFormat('yyyy-MM-dd').format(startDate);
       final endStr = DateFormat('yyyy-MM-dd').format(endDate);
 
-      print("Fetching spendings range: $startStr to $endStr");
-
-      final spendingData = await apiService.getSpendings(
+      final cachedSpending = await apiService.getCachedSpendings(
         startDate: startStr,
         endDate: endStr,
       );
-
-      print("Total spending records received: ${spendingData.length}");
-
-      double total = 0;
-      for (var s in spendingData) {
-        final rawDate = s['date'] as String;
-        final sum = double.parse(s['sum'].toString());
-        final date = DateTime.parse(rawDate).toLocal();
-
-        final isToday = date.year == now.year &&
-            date.month == now.month &&
-            date.day == now.day;
-
-        print(
-          "Record: Date=$rawDate (Local=${DateFormat('yyyy-MM-dd').format(date)}), Sum=$sum, isToday=$isToday",
-        );
-
-        if (isToday) {
-          total += sum;
-        }
+      if (cachedSpending != null) {
+        _processSpendingData(cachedSpending, now);
+        print("Spending loaded from cache");
       }
-
-      print("Calculated Today's Total: $total");
-
-      setState(() {
-        _todaySpent = total;
-      });
     } catch (e) {
-      print("Error fetching today's spending: $e");
-    } finally {
-      setState(() => _isLoadingStats = false);
-      print("--- Fetch Today's Data Finished ---");
+      print("Error loading cached data: $e");
     }
+
+    // 2. Fetch from Network
+    try {
+      // Steps
+      apiService.getDailySteps(dateStr).then((stepsData) {
+        _processStepsData(stepsData, dateStr);
+        print("Steps fetched from network");
+      }).catchError((e) {
+        print("Error fetching network steps: $e");
+      });
+
+      // Spending
+      final startDate = now.subtract(const Duration(days: 2));
+      final endDate = now.add(const Duration(days: 1));
+      final startStr = DateFormat('yyyy-MM-dd').format(startDate);
+      final endStr = DateFormat('yyyy-MM-dd').format(endDate);
+
+      apiService.getSpendings(startDate: startStr, endDate: endStr).then((spendingData) {
+        _processSpendingData(spendingData, now);
+        print("Spending fetched from network");
+      }).catchError((e) {
+        print("Error fetching network spending: $e");
+      }).whenComplete(() {
+        if (mounted) {
+          setState(() => _isLoadingStats = false);
+          print("--- Fetch Today's Data Finished ---");
+        }
+      });
+
+    } catch (e) {
+      print("Error starting network fetches: $e");
+      setState(() => _isLoadingStats = false);
+    }
+  }
+
+  void _processStepsData(List<dynamic> stepsData, String dateStr) {
+    if (!mounted) return;
+    if (stepsData.isNotEmpty) {
+      final todayEntry = stepsData.firstWhere(
+        (e) => (e['date'] as String).startsWith(dateStr),
+        orElse: () => null,
+      );
+      if (todayEntry != null) {
+        setState(() {
+          _todaySteps = int.parse(todayEntry['steps'].toString());
+        });
+      }
+    }
+  }
+
+  void _processSpendingData(List<dynamic> spendingData, DateTime now) {
+    if (!mounted) return;
+    double total = 0;
+    for (var s in spendingData) {
+      final rawDate = s['date'] as String;
+      final sum = double.tryParse(s['sum'].toString()) ?? 0.0;
+      final date = DateTime.parse(rawDate).toLocal();
+
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+
+      if (isToday) {
+        total += sum;
+      }
+    }
+    setState(() {
+      _todaySpent = total;
+    });
   }
 
   Future<void> _syncHealth() async {

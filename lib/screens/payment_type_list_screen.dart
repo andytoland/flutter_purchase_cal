@@ -28,17 +28,35 @@ class _PaymentTypeListScreenState extends State<PaymentTypeListScreen> {
       _errorMessage = null;
     });
 
+    // 1. Try Cache
+    try {
+      final cachedPts = await _apiService.getCachedPaymentTypes();
+      if (mounted && cachedPts != null) {
+        setState(() {
+          _paymentTypes = cachedPts.map((json) => PaymentType.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Cache error: $e");
+    }
+
+    // 2. Fetch Network
     try {
       final data = await _apiService.getPaymentTypes();
-      setState(() {
-        _paymentTypes = data.map((json) => PaymentType.fromJson(json)).toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _paymentTypes = data.map((json) => PaymentType.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted && _paymentTypes.isEmpty) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

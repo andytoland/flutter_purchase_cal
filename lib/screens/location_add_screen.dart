@@ -65,17 +65,35 @@ class _LocationAddScreenState extends State<LocationAddScreen> {
       _errorMessage = null;
     });
 
+    // 1. Try Cache
+    try {
+      final cachedLocs = await _apiService.getCachedLocations();
+      if (mounted && cachedLocs != null) {
+        setState(() {
+          _locations = cachedLocs.map((json) => Location.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Cache error: $e");
+    }
+
+    // 2. Fetch Network
     try {
       final data = await _apiService.getLocations();
-      setState(() {
-        _locations = data.map((json) => Location.fromJson(json)).toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _locations = data.map((json) => Location.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
+      if (mounted && _locations.isEmpty) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

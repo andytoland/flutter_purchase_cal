@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/purchase.dart';
 
 class ApiService {
@@ -118,6 +120,7 @@ class ApiService {
       final response = await _dio.get('$baseUrl/location/list');
 
       if (response.statusCode == 200) {
+        await _saveToCache('locations', response.data);
         return response.data;
       } else {
         throw Exception(
@@ -127,6 +130,10 @@ class ApiService {
     } catch (e) {
       throw Exception('Error fetching locations: $e');
     }
+  }
+
+  Future<List<dynamic>?> getCachedLocations() async {
+    return await _readFromCache<List<dynamic>>('locations');
   }
 
   Future<void> addLocation(
@@ -195,6 +202,7 @@ class ApiService {
       final response = await _dio.get('$baseUrl/paymenttype/list');
 
       if (response.statusCode == 200) {
+        await _saveToCache('payment_types', response.data);
         return response.data;
       } else {
         throw Exception(
@@ -204,6 +212,10 @@ class ApiService {
     } catch (e) {
       throw Exception('Error fetching payment types: $e');
     }
+  }
+
+  Future<List<dynamic>?> getCachedPaymentTypes() async {
+    return await _readFromCache<List<dynamic>>('payment_types');
   }
 
   Future<void> deletePaymentType(int id) async {
@@ -263,6 +275,8 @@ class ApiService {
       final response = await _dio.getUri(uri);
 
       if (response.statusCode == 200) {
+        // Save to cache
+        await _saveToCache('spendings_${startDate}_${endDate}', response.data);
         return response.data;
       } else {
         throw Exception(
@@ -272,6 +286,13 @@ class ApiService {
     } catch (e) {
       throw Exception('Error fetching spendings: $e');
     }
+  }
+
+  Future<List<dynamic>?> getCachedSpendings({
+    String? startDate,
+    String? endDate,
+  }) async {
+    return await _readFromCache<List<dynamic>>('spendings_${startDate}_${endDate}');
   }
 
   Future<void> deleteSpending(int id) async {
@@ -479,6 +500,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        await _saveToCache('steps_$startDate', response.data);
         return response.data as List<dynamic>;
       } else {
         throw Exception(
@@ -488,6 +510,33 @@ class ApiService {
     } catch (e) {
       throw Exception('Error fetching daily steps: $e');
     }
+  }
+
+  Future<List<dynamic>?> getCachedDailySteps(String startDate) async {
+    return await _readFromCache<List<dynamic>>('steps_$startDate');
+  }
+
+  // --- Caching Utilities ---
+  Future<void> _saveToCache(String key, dynamic data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, jsonEncode(data));
+    } catch (e) {
+      print("Cache save error: $e");
+    }
+  }
+
+  Future<T?> _readFromCache<T>(String key) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(key);
+      if (cachedStr != null) {
+        return jsonDecode(cachedStr) as T;
+      }
+    } catch (e) {
+      print("Cache read error: $e");
+    }
+    return null;
   }
 
   Future<void> syncWorkout(Map<String, dynamic> workoutData) async {
