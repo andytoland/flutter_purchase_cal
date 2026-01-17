@@ -446,239 +446,240 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Purchase Calc'),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).appBarTheme.backgroundColor,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Theme.of(context).appBarTheme.foregroundColor,
-                  fontSize: 24,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list),
-              title: const Text('Show Purchases'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PurchaseListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_location),
-              title: const Text('Add Location'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LocationAddScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.place),
-              title: const Text('Add Visit'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const VisitAddScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('List Visits'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const VisitListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.payment),
-              title: const Text('Add Payment Type'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PaymentTypeAddScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.list_alt),
-              title: const Text('Payment Types'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PaymentTypeListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money),
-              title: const Text('Add Spending'),
-              onTap: () async {
-                Navigator.pop(context); // Close drawer
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SpendingAddScreen(),
-                  ),
-                );
-                _fetchTodayData();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.money_off),
-              title: const Text('Spending List'),
-              onTap: () async {
-                Navigator.pop(context); // Close drawer
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SpendingListScreen(),
-                  ),
-                );
-                _fetchTodayData();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_card),
-              title: const Text('Add Daily Budget'),
-              onTap: () async {
-                Navigator.pop(context); // Close drawer
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DailyBudgetAddScreen(),
-                  ),
-                );
-                _fetchTodayData();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text('List Daily Budgets'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DailyBudgetListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.directions_walk),
-              title: const Text('Daily Steps'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DailyStepsListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.directions_run),
-              title: const Text('Running History'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WorkoutListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.fitness_center),
-              title: const Text('Exercise History'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ExerciseListScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-      body: ListenableBuilder(
-        listenable: themeManager,
-        builder: (context, _) {
-          final theme = themeManager.currentTheme;
-          final customBg = themeManager.selectedBackgroundImage;
-          // Identify light themes
-          final isDark = theme != AppTheme.light && 
-                        theme != AppTheme.softBlueLush &&
-                        theme != AppTheme.lavenderMist &&
-                        theme != AppTheme.sageGarden &&
-                        theme != AppTheme.sandyBeach &&
-                        theme != AppTheme.minimalWhite;
-          final textColor = isDark ? Colors.white : Colors.black87;
-          final containerColor = isDark 
-              ? Colors.black.withOpacity(0.2) 
-              : Colors.white.withOpacity(0.3);
+    return ListenableBuilder(
+      listenable: themeManager,
+      builder: (context, _) {
+        final theme = themeManager.currentTheme;
+        final customBg = themeManager.selectedBackgroundImage;
+        
+        // Identify light themes
+        final isDark = theme != AppTheme.light && 
+                      theme != AppTheme.softBlueLush &&
+                      theme != AppTheme.lavenderMist &&
+                      theme != AppTheme.sageGarden &&
+                      theme != AppTheme.sandyBeach &&
+                      theme != AppTheme.minimalWhite;
+        final textColor = isDark ? Colors.white : Colors.black87;
+        final containerColor = isDark 
+            ? Colors.black.withOpacity(0.2) 
+            : Colors.white.withOpacity(0.3);
 
-          return Stack(
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Purchase Calc'),
+          ),
+          drawer: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).appBarTheme.backgroundColor,
+                  ),
+                  child: Text(
+                    'Menu',
+                    style: TextStyle(
+                      color: Theme.of(context).appBarTheme.foregroundColor,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Home'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.list),
+                  title: const Text('Show Purchases'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PurchaseListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.add_location),
+                  title: const Text('Add Location'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LocationAddScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.place),
+                  title: const Text('Add Visit'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const VisitAddScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.history),
+                  title: const Text('List Visits'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const VisitListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.payment),
+                  title: const Text('Add Payment Type'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PaymentTypeAddScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.list_alt),
+                  title: const Text('Payment Types'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PaymentTypeListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.attach_money),
+                  title: const Text('Add Spending'),
+                  onTap: () async {
+                    Navigator.pop(context); // Close drawer
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SpendingAddScreen(),
+                      ),
+                    );
+                    _fetchTodayData();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.money_off),
+                  title: const Text('Spending List'),
+                  onTap: () async {
+                    Navigator.pop(context); // Close drawer
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SpendingListScreen(),
+                      ),
+                    );
+                    _fetchTodayData();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.add_card),
+                  title: const Text('Add Daily Budget'),
+                  onTap: () async {
+                    Navigator.pop(context); // Close drawer
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DailyBudgetAddScreen(),
+                      ),
+                    );
+                    _fetchTodayData();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.account_balance_wallet),
+                  title: const Text('List Daily Budgets'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DailyBudgetListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_walk),
+                  title: const Text('Daily Steps'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DailyStepsListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_run),
+                  title: const Text('Running History'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const WorkoutListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.fitness_center),
+                  title: const Text('Exercise History'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExerciseListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          body: Stack(
             fit: StackFit.expand,
             children: [
               if (customBg != null)
@@ -740,68 +741,117 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: Column(
                               children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.directions_walk,
-                                  color: Colors.orange,
+                                Column(
+                                  children: [
+                                    Text(
+                                      'DAILY STEPS',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: textColor.withOpacity(0.7),
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.directions_walk,
+                                          color: Colors.orange,
+                                          size: 32,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '$_todaySteps',
+                                          style: TextStyle(
+                                            fontSize: 36,
+                                            fontWeight: FontWeight.w900,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Steps: $_todaySteps',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: textColor,
-                                  ),
+                                const SizedBox(height: 20),
+                                Column(
+                                  children: [
+                                    Text(
+                                      'DAILY SPENDING',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: textColor.withOpacity(0.7),
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.attach_money,
+                                          color: Colors.green,
+                                          size: 32,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '${_todaySpent.toStringAsFixed(2)} €',
+                                          style: TextStyle(
+                                            fontSize: 36,
+                                            fontWeight: FontWeight.w900,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: _quickAddVisit,
+                                      icon: const Icon(Icons.add_location_alt, size: 20),
+                                      label: const Text(
+                                        'Add Visit',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.blueGrey.withOpacity(0.05),
+                                        foregroundColor: textColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: _quickAddSpending,
+                                      icon: const Icon(Icons.add_shopping_cart, size: 20),
+                                      label: const Text(
+                                        'Add Spending',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                        backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.blueGrey.withOpacity(0.05),
+                                        foregroundColor: textColor,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.attach_money, color: Colors.green),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Spent: ${_todaySpent.toStringAsFixed(2)} €',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    color: textColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: _quickAddVisit,
-                                  icon: const Icon(Icons.add_location_alt),
-                                  label: const Text('Add Visit'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isDark ? Colors.white.withOpacity(0.2) : Colors.blueGrey.withOpacity(0.1),
-                                    foregroundColor: textColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                ElevatedButton.icon(
-                                  onPressed: _quickAddSpending,
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  label: const Text('Add Spending'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: isDark ? Colors.white.withOpacity(0.2) : Colors.blueGrey.withOpacity(0.1),
-                                    foregroundColor: textColor,
-                                  ),
-                                ),
-                                ],
-                              ),
-                            ],
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -837,9 +887,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

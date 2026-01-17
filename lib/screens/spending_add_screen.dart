@@ -183,6 +183,7 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _selectedLocationName,
                       decoration: const InputDecoration(
                         labelText: 'Location',
@@ -191,7 +192,7 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
                       items: _locations.map((loc) {
                         return DropdownMenuItem(
                           value: loc.name,
-                          child: Text(loc.name),
+                          child: Text(loc.name, overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -203,6 +204,7 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _selectedPaymentType,
                       decoration: const InputDecoration(
                         labelText: 'Payment Type',
@@ -211,7 +213,7 @@ class _SpendingAddScreenState extends State<SpendingAddScreen> {
                       items: _paymentTypes.map((pt) {
                         return DropdownMenuItem(
                           value: pt.paymenttype,
-                          child: Text(pt.paymenttype),
+                          child: Text(pt.paymenttype, overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
                       onChanged: (value) {

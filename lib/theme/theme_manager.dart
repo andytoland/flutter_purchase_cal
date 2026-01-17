@@ -82,6 +82,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Color(0xFF0F3460),
             foregroundColor: Colors.white,
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF16213E),
+          ),
         );
       case AppTheme.light:
         return ThemeData(
@@ -93,6 +96,9 @@ class ThemeManager extends ChangeNotifier {
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.blueGrey,
             foregroundColor: Colors.white,
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Colors.white,
           ),
         );
       case AppTheme.highContrastDark:
@@ -109,6 +115,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Colors.black,
             foregroundColor: Color(0xFFFFFF00),
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF121212),
+          ),
         );
       case AppTheme.softBlueLush:
         return ThemeData(
@@ -122,6 +131,9 @@ class ThemeManager extends ChangeNotifier {
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFF90A4AE),
             foregroundColor: Colors.white,
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFFF0F4F7),
           ),
         );
       case AppTheme.midnightGreen:
@@ -138,6 +150,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Color(0xFF100720),
             foregroundColor: Color(0xFFE2D5B1),
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF1B2430),
+          ),
         );
       case AppTheme.royalPurple:
         return ThemeData(
@@ -152,6 +167,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Color(0xFF4B4453),
             foregroundColor: Color(0xFFFEFEDF),
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF2B2B2B),
+          ),
         );
       case AppTheme.crimsonRed:
         return ThemeData(
@@ -164,6 +182,9 @@ class ThemeManager extends ChangeNotifier {
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFF630330),
             foregroundColor: Colors.white,
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF1A1A1A),
           ),
         );
       case AppTheme.lavenderMist:
@@ -179,6 +200,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Color(0xFFDCD0FF),
             foregroundColor: Colors.black87,
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFFF8F8FF),
+          ),
         );
       case AppTheme.sageGarden:
         return ThemeData(
@@ -193,6 +217,9 @@ class ThemeManager extends ChangeNotifier {
             backgroundColor: Color(0xFFB8C4AF),
             foregroundColor: Colors.black87,
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFFF1F4EE),
+          ),
         );
       case AppTheme.sandyBeach:
         return ThemeData(
@@ -206,6 +233,9 @@ class ThemeManager extends ChangeNotifier {
           appBarTheme: const AppBarTheme(
             backgroundColor: Color(0xFFFFECB3),
             foregroundColor: Colors.black87,
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFFFFFDE7),
           ),
         );
       case AppTheme.minimalWhite:
@@ -223,6 +253,9 @@ class ThemeManager extends ChangeNotifier {
             foregroundColor: Colors.black,
             elevation: 1,
           ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Colors.white,
+          ),
         );
       case AppTheme.originalDark:
       default:
@@ -235,6 +268,9 @@ class ThemeManager extends ChangeNotifier {
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
+          ),
+          drawerTheme: const DrawerThemeData(
+            backgroundColor: Color(0xFF121212),
           ),
         );
     }
