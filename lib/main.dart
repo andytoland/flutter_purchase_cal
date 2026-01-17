@@ -21,6 +21,9 @@ import 'screens/workout_list_screen.dart';
 import 'screens/exercise_list_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'models/location.dart' as model;
+import 'theme/theme_manager.dart';
+
+final themeManager = ThemeManager();
 
 const String healthSyncTask =
     "com.example.flutter_purchase_calc.healthSyncTask";
@@ -54,20 +57,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Purchase Calc',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.black,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-        ),
-      ),
-      home: const HomeScreen(),
+    return ListenableBuilder(
+      listenable: themeManager,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Purchase Calc',
+          theme: themeManager.getThemeData(),
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }
@@ -662,142 +660,178 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/images/bull.png',
-            fit: BoxFit.cover,
-            color: Colors.black.withOpacity(0.3),
-            colorBlendMode: BlendMode.darken,
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Purchase Calc',
-                  style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(2.0, 2.0),
-                        blurRadius: 3.0,
-                        color: Colors.black,
+      body: ListenableBuilder(
+        listenable: themeManager,
+        builder: (context, _) {
+          final theme = themeManager.currentTheme;
+          final customBg = themeManager.selectedBackgroundImage;
+          final isDark = theme != AppTheme.light;
+          final textColor = isDark ? Colors.white : Colors.black87;
+          final containerColor = isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.8);
+
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              if (customBg != null)
+                Image.asset(
+                  customBg,
+                  fit: BoxFit.cover,
+                  color: isDark ? Colors.black.withOpacity(0.3) : null,
+                  colorBlendMode: isDark ? BlendMode.darken : null,
+                )
+              else if (theme == AppTheme.originalDark)
+                Image.asset(
+                  'assets/images/bull.png',
+                  fit: BoxFit.cover,
+                  color: Colors.black.withOpacity(0.3),
+                  colorBlendMode: BlendMode.darken,
+                )
+              else if (theme == AppTheme.modernDark)
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
+                    ),
+                  ),
+                )
+              else
+                Container(color: Theme.of(context).scaffoldBackgroundColor),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Purchase Calc',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        shadows: isDark ? [
+                          const Shadow(
+                            offset: Offset(2.0, 2.0),
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                          ),
+                        ] : null,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_isLoadingStats)
+                      CircularProgressIndicator(color: textColor)
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: containerColor,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: isDark ? null : [
+                             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, spreadRadius: 1)
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.directions_walk,
+                                  color: Colors.orange,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Steps: $_todaySteps',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.attach_money, color: Colors.green),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Spent: ${_todaySpent.toStringAsFixed(2)} €',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: _quickAddVisit,
+                                  icon: const Icon(Icons.add_location_alt),
+                                  label: const Text('Add Visit'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? Colors.white.withOpacity(0.2) : Colors.blueGrey.withOpacity(0.1),
+                                    foregroundColor: textColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                ElevatedButton.icon(
+                                  onPressed: _quickAddSpending,
+                                  icon: const Icon(Icons.add_shopping_cart),
+                                  label: const Text('Add Spending'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDark ? Colors.white.withOpacity(0.2) : Colors.blueGrey.withOpacity(0.1),
+                                    foregroundColor: textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                if (_isLoadingStats)
-                  const CircularProgressIndicator(color: Colors.white)
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+              ),
+              Positioned(
+                bottom: 30,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Syncing Health Data...')),
+                      );
+                      await HealthService().syncSteps();
+                      await _fetchTodayData();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Step Sync Completed')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.sync),
+                    label: const Text('Sync Health Data'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? Colors.white.withOpacity(0.2) : Colors.blueGrey.withOpacity(0.1),
+                      foregroundColor: textColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.directions_walk,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Steps: $_todaySteps',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.attach_money, color: Colors.green),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Spent: ${_todaySpent.toStringAsFixed(2)} €',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _quickAddVisit,
-                              icon: const Icon(Icons.add_location_alt),
-                              label: const Text('Add Visit'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            ElevatedButton.icon(
-                              onPressed: _quickAddSpending,
-                              icon: const Icon(Icons.add_shopping_cart),
-                              label: const Text('Add Spending'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Syncing Health Data...')),
-                  );
-                  await HealthService().syncSteps();
-                  await _fetchTodayData();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Step Sync Completed')),
-                  );
-                },
-                icon: const Icon(Icons.sync),
-                label: const Text('Sync Health Data'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
