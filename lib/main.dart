@@ -665,7 +665,13 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, _) {
           final theme = themeManager.currentTheme;
           final customBg = themeManager.selectedBackgroundImage;
-          final isDark = theme != AppTheme.light;
+          // Identify light themes
+          final isDark = theme != AppTheme.light && 
+                        theme != AppTheme.softBlueLush &&
+                        theme != AppTheme.lavenderMist &&
+                        theme != AppTheme.sageGarden &&
+                        theme != AppTheme.sandyBeach &&
+                        theme != AppTheme.minimalWhite;
           final textColor = isDark ? Colors.white : Colors.black87;
           final containerColor = isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.8);
 
