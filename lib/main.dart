@@ -91,15 +91,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchTodayData() async {
     setState(() => _isLoadingStats = true);
-    try {
-      final apiService = ApiService();
-      final now = DateTime.now();
-      final dateStr = DateFormat('yyyy-MM-dd').format(now);
+    final apiService = ApiService();
+    final now = DateTime.now();
+    final dateStr = DateFormat('yyyy-MM-dd').format(now);
 
-      // Fetch steps
+    print("--- Fetching Today's Data ($dateStr) ---");
+
+    // 1. Fetch Steps
+    try {
       final stepsData = await apiService.getDailySteps(dateStr);
       if (stepsData.isNotEmpty) {
-        // Find the entry for today
         final todayEntry = stepsData.firstWhere(
           (e) => (e['date'] as String).startsWith(dateStr),
           orElse: () => null,
@@ -108,25 +109,58 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _todaySteps = int.parse(todayEntry['steps'].toString());
           });
+          print("Steps fetched: $_todaySteps");
+        }
+      }
+    } catch (e) {
+      print("Error fetching today's steps: $e");
+    }
+
+    // 2. Fetch Spending
+    try {
+      final startDate = now.subtract(const Duration(days: 2));
+      final endDate = now.add(const Duration(days: 1));
+      final startStr = DateFormat('yyyy-MM-dd').format(startDate);
+      final endStr = DateFormat('yyyy-MM-dd').format(endDate);
+
+      print("Fetching spendings range: $startStr to $endStr");
+
+      final spendingData = await apiService.getSpendings(
+        startDate: startStr,
+        endDate: endStr,
+      );
+
+      print("Total spending records received: ${spendingData.length}");
+
+      double total = 0;
+      for (var s in spendingData) {
+        final rawDate = s['date'] as String;
+        final sum = double.parse(s['sum'].toString());
+        final date = DateTime.parse(rawDate).toLocal();
+
+        final isToday = date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day;
+
+        print(
+          "Record: Date=$rawDate (Local=${DateFormat('yyyy-MM-dd').format(date)}), Sum=$sum, isToday=$isToday",
+        );
+
+        if (isToday) {
+          total += sum;
         }
       }
 
-      // Fetch spending
-      final spendingData = await apiService.getSpendings(
-        startDate: dateStr,
-        endDate: dateStr,
-      );
-      double total = 0;
-      for (var s in spendingData) {
-        total += (s['sum'] as num).toDouble();
-      }
+      print("Calculated Today's Total: $total");
+
       setState(() {
         _todaySpent = total;
       });
     } catch (e) {
-      print("Error fetching today's data: $e");
+      print("Error fetching today's spending: $e");
     } finally {
       setState(() => _isLoadingStats = false);
+      print("--- Fetch Today's Data Finished ---");
     }
   }
 
@@ -254,40 +288,43 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: const Icon(Icons.attach_money),
               title: const Text('Add Spending'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context); // Close drawer
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SpendingAddScreen(),
                   ),
                 );
+                _fetchTodayData();
               },
             ),
             ListTile(
               leading: const Icon(Icons.money_off),
               title: const Text('Spending List'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context); // Close drawer
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SpendingListScreen(),
                   ),
                 );
+                _fetchTodayData();
               },
             ),
             ListTile(
               leading: const Icon(Icons.add_card),
               title: const Text('Add Daily Budget'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context); // Close drawer
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const DailyBudgetAddScreen(),
                   ),
                 );
+                _fetchTodayData();
               },
             ),
             ListTile(
