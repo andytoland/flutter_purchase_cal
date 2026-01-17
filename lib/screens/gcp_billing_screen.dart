@@ -238,14 +238,33 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 8),
-            Text(
-              '${_billingData!.totalCost.toStringAsFixed(2)} ${_billingData!.currency}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
+            if (_billingData!.totalCost != null)
+              Text(
+                '${_billingData!.totalCost!.toStringAsFixed(2)} ${_billingData!.currency}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              Column(
+                children: const [
+                  Text(
+                    'N/A',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Cost data is currently unavailable',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  )
+                ],
               ),
-            ),
             if (_billingData!.isDirect) ...[
               const SizedBox(height: 8),
               const Text(
