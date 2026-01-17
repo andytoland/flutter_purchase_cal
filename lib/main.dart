@@ -194,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _quickAddVisit() async {
+  Future<void> _quickLocationAction(Function(model.Location) onLocationSelected) async {
     // 1. Check/Request Geolocation Permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -213,7 +213,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // 2. Get Current Position
       final position = await Geolocator.getCurrentPosition();
-      print("Current Position: ${position.latitude}, ${position.longitude}");
 
       // 3. Get Locations
       final apiService = ApiService();
@@ -274,7 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             subtitle: Text('${dist.toStringAsFixed(0)} meters away'),
                             onTap: () {
                               Navigator.pop(context);
-                              _submitVisit(loc.id, loc.name);
+                              onLocationSelected(loc);
                             },
                           );
                         }),
@@ -286,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             title: Text(loc.name),
                             onTap: () {
                               Navigator.pop(context);
-                              _submitVisit(loc.id, loc.name);
+                              onLocationSelected(loc);
                             },
                           )),
                     ],
@@ -298,10 +297,112 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
     } catch (e) {
-      print("Error in quick visit: $e");
+      print("Error in location action: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _quickAddVisit() async {
+    await _quickLocationAction((loc) => _submitVisit(loc.id, loc.name));
+  }
+
+  Future<void> _quickAddSpending() async {
+    await _quickLocationAction((loc) => _promptForSum(loc));
+  }
+
+  Future<void> _promptForSum(model.Location loc) async {
+    final TextEditingController sumController = TextEditingController();
+    final apiService = ApiService();
+    
+    // 1. Fetch Payment Types
+    List<dynamic> ptData = await apiService.getCachedPaymentTypes() ?? [];
+    if (ptData.isEmpty) {
+      ptData = await apiService.getPaymentTypes();
+    }
+    
+    String? selectedPT = ptData.isNotEmpty ? ptData.first['paymenttype'] as String : 'Bank card';
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Spent at ${loc.name}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: sumController,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount (€)',
+                      hintText: '0.00',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedPT,
+                    decoration: const InputDecoration(labelText: 'Payment Type'),
+                    items: ptData.map((pt) {
+                      final name = pt['paymenttype'] as String;
+                      return DropdownMenuItem(value: name, child: Text(name));
+                    }).toList(),
+                    onChanged: (val) {
+                      setDialogState(() => selectedPT = val);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final val = double.tryParse(sumController.text.replaceAll(',', '.'));
+                    if (val != null && val > 0) {
+                      Navigator.pop(context, {'sum': val, 'paymentType': selectedPT});
+                    }
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      _submitSpending(loc.name, result['sum'], result['paymentType']);
+    }
+  }
+
+  Future<void> _submitSpending(String locationName, double sum, String paymentType) async {
+    setState(() => _isLoadingStats = true);
+    try {
+      final apiService = ApiService();
+      await apiService.addSpending(sum, locationName, paymentType);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added $sum € spent at $locationName ($paymentType)')),
+        );
+        _fetchTodayData(); // Refresh stats
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add spending: $e')),
         );
       }
     } finally {
@@ -637,14 +738,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: _quickAddVisit,
-                          icon: const Icon(Icons.add_location_alt),
-                          label: const Text('Add Visit'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            foregroundColor: Colors.white,
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _quickAddVisit,
+                              icon: const Icon(Icons.add_location_alt),
+                              label: const Text('Add Visit'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton.icon(
+                              onPressed: _quickAddSpending,
+                              icon: const Icon(Icons.add_shopping_cart),
+                              label: const Text('Add Spending'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

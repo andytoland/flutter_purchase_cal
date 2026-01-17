@@ -24,10 +24,10 @@ class _SpendingListScreenState extends State<SpendingListScreen> {
   @override
   void initState() {
     super.initState();
-    // Default dates: Start = 30 days ago, End = Tomorrow
+    // Default dates: Start = Today, End = Tomorrow
     final now = DateTime.now();
-    _startDate = now.subtract(const Duration(days: 30));
-    _endDate = now.add(const Duration(days: 1));
+    _startDate = DateTime(now.year, now.month, now.day);
+    _endDate = _startDate.add(const Duration(days: 1));
 
     _fetchSpendings();
   }
