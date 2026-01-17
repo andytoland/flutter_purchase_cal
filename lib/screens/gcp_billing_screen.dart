@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_service.dart';
+import '../services/gcp_billing_service.dart';
 import '../models/gcp_billing.dart';
 
 class GCPBillingScreen extends StatefulWidget {
@@ -12,15 +14,41 @@ class GCPBillingScreen extends StatefulWidget {
 
 class _GCPBillingScreenState extends State<GCPBillingScreen> {
   final ApiService _apiService = ApiService();
+  final GCPBillingService _gcpService = GCPBillingService();
   GCPBilling? _billingData;
   bool _isLoading = true;
   String? _errorMessage;
   String? _billingAccountId;
+  GoogleSignInAccount? _googleAccount;
 
   @override
   void initState() {
     super.initState();
-    _fetchBilling();
+    _checkSignIn();
+  }
+
+  Future<void> _checkSignIn() async {
+    _googleAccount = await _gcpService.signInSilently();
+    if (_googleAccount != null) {
+      _fetchBilling();
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleSignIn() async {
+    setState(() => _isLoading = true);
+    final account = await _gcpService.signIn();
+    if (account != null) {
+      setState(() {
+        _googleAccount = account;
+      });
+      _fetchBilling();
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchBilling() async {
@@ -40,7 +68,8 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
       }
       _billingAccountId = id;
 
-      final data = await _apiService.getGCPBilling(id);
+      // Use the direct GCP service instead of the backend proxy
+      final data = await _gcpService.fetchBillingInfo(id);
       setState(() {
         _billingData = GCPBilling.fromJson(data);
         _isLoading = false;
@@ -70,10 +99,22 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
       appBar: AppBar(
         title: const Text('GCP Billing'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchBilling,
-          ),
+          if (_googleAccount != null)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _fetchBilling,
+            ),
+          if (_googleAccount != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await _gcpService.signOut();
+                setState(() {
+                  _googleAccount = null;
+                  _billingData = null;
+                });
+              },
+            ),
         ],
       ),
       body: _buildBody(),
@@ -83,6 +124,34 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_googleAccount == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.account_circle, size: 80, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text(
+                'Sign in with Google to view billing data',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _handleSignIn,
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
@@ -155,7 +224,7 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).colorScheme.primary,
+              Theme.of(context).primaryColor,
               Theme.of(context).colorScheme.secondary,
             ],
             begin: Alignment.topLeft,
@@ -177,6 +246,13 @@ class _GCPBillingScreenState extends State<GCPBillingScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            if (_billingData!.isDirect) ...[
+              const SizedBox(height: 8),
+              const Text(
+                '(Direct API limits may apply)',
+                style: TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+            ]
           ],
         ),
       ),

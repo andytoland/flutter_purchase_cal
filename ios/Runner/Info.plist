@@ -65,5 +65,18 @@
 		<string>com.example.flutter_purchase_calc.healthSyncTask</string>
 		<string>be.tramckrijte.workmanager.BackgroundTask</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>348566072432-v4d3ob7pcq9u5c84vuoaemonrvptqb5h.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.348566072432-v4d3ob7pcq9u5c84vuoaemonrvptqb5h</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
