@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -673,7 +674,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         theme != AppTheme.sandyBeach &&
                         theme != AppTheme.minimalWhite;
           final textColor = isDark ? Colors.white : Colors.black87;
-          final containerColor = isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.8);
+          final containerColor = isDark 
+              ? Colors.black.withOpacity(0.2) 
+              : Colors.white.withOpacity(0.3);
 
           return Stack(
             fit: StackFit.expand,
@@ -682,7 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Image.asset(
                   customBg,
                   fit: BoxFit.cover,
-                  color: isDark ? Colors.black.withOpacity(0.3) : null,
+                  color: isDark ? Colors.black.withOpacity(0.2) : null,
                   colorBlendMode: isDark ? BlendMode.darken : null,
                 )
               else if (theme == AppTheme.originalDark)
@@ -708,39 +711,35 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Purchase Calc',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        shadows: isDark ? [
-                          const Shadow(
-                            offset: Offset(2.0, 2.0),
-                            blurRadius: 3.0,
-                            color: Colors.black,
-                          ),
-                        ] : null,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                     if (_isLoadingStats)
                       CircularProgressIndicator(color: textColor)
                     else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: containerColor,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: isDark ? null : [
-                             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, spreadRadius: 1)
-                          ],
-                        ),
-                        child: Column(
-                          children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              color: containerColor,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -796,11 +795,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     foregroundColor: textColor,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
