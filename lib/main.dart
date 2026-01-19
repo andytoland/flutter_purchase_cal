@@ -82,6 +82,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _todaySteps = 0;
   double _todaySpent = 0.0;
+  double? _todayBudget;
   bool _isLoadingStats = true;
 
   @override
@@ -134,6 +135,16 @@ class _HomeScreenState extends State<HomeScreen> {
         print("Error fetching network steps: $e");
       });
 
+      // Daily Budget
+      apiService.getDailyBudgets(now).then((budgetData) {
+        _processBudgetData(budgetData);
+        print("Budget fetched from network");
+      }).catchError((e) {
+        print("Error fetching network budget: $e");
+        // If 404 or empty, we assume no budget
+        if (mounted) setState(() => _todayBudget = null);
+      });
+
       // Spending
       final startDate = now.subtract(const Duration(days: 2));
       final endDate = now.add(const Duration(days: 1));
@@ -171,6 +182,29 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     }
+  }
+
+  void _processBudgetData(List<dynamic> budgetData) {
+    if (!mounted) return;
+    double totalBudget = 0;
+    final now = DateTime.now();
+
+    for (var b in budgetData) {
+      final dateStr = b['date'] as String;
+      // Handle both full ISO string and simple date string
+      final date = DateTime.parse(dateStr).toLocal();
+      
+      final isToday = date.year == now.year &&
+          date.month == now.month &&
+          date.day == now.day;
+
+      if (isToday) {
+        totalBudget += double.tryParse(b['sum'].toString()) ?? 0.0;
+      }
+    }
+    setState(() {
+      _todayBudget = totalBudget > 0 ? totalBudget : null;
+    });
   }
 
   void _processSpendingData(List<dynamic> spendingData, DateTime now) {
@@ -810,12 +844,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                           size: 32,
                                         ),
                                         const SizedBox(width: 10),
-                                        Text(
-                                          '${_todaySpent.toStringAsFixed(2)} €',
-                                          style: TextStyle(
-                                            fontSize: 36,
-                                            fontWeight: FontWeight.w900,
-                                            color: textColor,
+                                        Text.rich(
+                                          TextSpan(
+                                            children: [
+                                              TextSpan(
+                                                text: '${_todaySpent.toStringAsFixed(2)} €',
+                                                style: TextStyle(
+                                                  fontSize: 36,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: textColor,
+                                                ),
+                                              ),
+                                              if (_todayBudget != null && _todayBudget! > 0) ...[
+                                                const TextSpan(text: ' '),
+                                                TextSpan(
+                                                  text: '(${((_todaySpent / _todayBudget!) * 100).toStringAsFixed(0)}%)',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: (_todaySpent / _todayBudget!) > 1.0 ? Colors.red : Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                       ],
