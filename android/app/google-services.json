@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "939699681475",
+    "project_id": "purchase-calc-3ca6a",
+    "storage_bucket": "purchase-calc-3ca6a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:939699681475:android:9e7509dc330ddb67518a76",
+        "android_client_info": {
+          "package_name": "biz.lightsaber.pc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUeYSeebXy5xdhrXOZMXEMRvAuLEzgqn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

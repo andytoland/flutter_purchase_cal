@@ -11,7 +11,27 @@ class HealthService {
 
   Future<bool> requestPermissions() async {
     if (kIsWeb) return false;
+    
+    // Configure Health Connect on Android
+    await health.configure();
+
     var types = [HealthDataType.STEPS, HealthDataType.WORKOUT];
+
+    // Check Health Connect availability on Android
+    if (defaultTargetPlatform == TargetPlatform.android) {
+        HealthConnectSdkStatus? status = await health.getHealthConnectSdkStatus();
+        if (status == HealthConnectSdkStatus.sdkUnavailable) {
+            print("Health Connect SDK is unavailable. Prompting to install.");
+             // Try to install/update Health Connect
+            await health.installHealthConnect();
+            return false;
+        }
+        if (status == HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
+            print("Health Connect SDK provider update required. Prompting to install/update.");
+            await health.installHealthConnect();
+            return false;
+        }
+    }
 
     bool? hasPermission = await health.hasPermissions(types);
     if (hasPermission == true) return true;

@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:workmanager/workmanager.dart';
 import 'services/health_service.dart';
+import 'services/weather_service.dart';
 import 'screens/purchase_list_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/weather_detail_screen.dart';
+import 'package:weather/weather.dart';
 import 'screens/location_add_screen.dart';
 import 'screens/payment_type_add_screen.dart';
 import 'screens/payment_type_list_screen.dart';
@@ -14,6 +17,8 @@ import 'screens/spending_list_screen.dart';
 import 'screens/visit_add_screen.dart';
 import 'screens/visit_list_screen.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/daily_budget_add_screen.dart';
 import 'screens/daily_budget_list_screen.dart';
@@ -29,13 +34,118 @@ final themeManager = ThemeManager();
 
 const String healthSyncTask =
     "com.example.flutter_purchase_calc.healthSyncTask";
+const String visitReminderTask =
+    "com.example.flutter_purchase_calc.visitReminderTask";
+
+String _todayKey() {
+  final now = DateTime.now();
+  return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+}
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    final healthService = HealthService();
-    await healthService.syncSteps();
-    return Future.value(true);
+    try {
+      if (task == healthSyncTask) {
+        final healthService = HealthService();
+        await healthService.syncSteps();
+        return Future.value(true);
+      }
+
+      if (task == visitReminderTask) {
+        // Throttle to ~10 minutes and respect suppression after a visit today
+        final prefs = await SharedPreferences.getInstance();
+        final today = _todayKey();
+        final suppressed = prefs.getString('visit_suppressed_date');
+        if (suppressed == today) {
+          return Future.value(true);
+        }
+        final lastNotified = prefs.getInt('visit_last_notified_ms') ?? 0;
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        if (nowMs - lastNotified < 10 * 60 * 1000) {
+          return Future.value(true);
+        }
+
+        // Check permissions and get current location
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
+          return Future.value(true);
+        }
+        if (!await Geolocator.isLocationServiceEnabled()) {
+          return Future.value(true);
+        }
+
+        final position = await Geolocator.getCurrentPosition();
+
+        // Load locations (prefer cache to avoid auth issues in background)
+        final api = ApiService();
+        List<dynamic>? locData = await api.getCachedLocations();
+        locData ??= await api.getLocations();
+        final locations = locData
+            .map((json) => model.Location.fromJson(json))
+            .where((l) => l.latitude != null && l.longitude != null)
+            .toList();
+        if (locations.isEmpty) return Future.value(true);
+
+        // Find nearest within 200m
+        model.Location? nearest;
+        double? nearestDist;
+        for (final loc in locations) {
+          final d = Geolocator.distanceBetween(
+            position.latitude,
+            position.longitude,
+            loc.latitude!,
+            loc.longitude!,
+          );
+          if (d <= 200 && (nearestDist == null || d < nearestDist)) {
+            nearest = loc;
+            nearestDist = d;
+          }
+        }
+        if (nearest == null) return Future.value(true);
+
+        // Fetch today's visits and check if already visited nearest
+        final startStr = today;
+        final endStr = today;
+        final visits = await api.getVisits(startDate: startStr, endDate: endStr);
+        bool hasVisited = false;
+        for (final v in visits) {
+          String locName = '';
+          if (v['location'] != null && v['location'] is Map) {
+            locName = v['location']['name'] ?? '';
+          } else if (v['locationName'] != null) {
+            locName = v['locationName'];
+          }
+          if (locName == nearest.name) {
+            hasVisited = true;
+            break;
+          }
+        }
+
+        if (hasVisited) {
+          await prefs.setString('visit_suppressed_date', today);
+          return Future.value(true);
+        }
+
+        // Show notification
+        final notifier = NotificationService();
+        await notifier.init();
+        await notifier.requestPermissionsIfNeeded();
+        await notifier.showVisitReminder(nearest.name);
+        await prefs.setInt('visit_last_notified_ms', nowMs);
+        return Future.value(true);
+      }
+
+      // Unknown task
+      return Future.value(true);
+    } catch (e) {
+      // Fail-safe: do not crash background isolate
+      return Future.value(true);
+    }
   });
 }
 
@@ -50,6 +160,19 @@ void main() async {
     frequency: const Duration(hours: 1),
     constraints: Constraints(networkType: NetworkType.connected),
   );
+
+  // Register visit reminder every ~15 minutes (Android minimum); iOS best-effort
+  await Workmanager().registerPeriodicTask(
+    "2",
+    visitReminderTask,
+    frequency: const Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+
+  // Initialize notifications early
+  final notifier = NotificationService();
+  await notifier.init();
+  await notifier.requestPermissionsIfNeeded();
 
   runApp(const MyApp());
 }
@@ -84,12 +207,30 @@ class _HomeScreenState extends State<HomeScreen> {
   double _todaySpent = 0.0;
   double? _todayBudget;
   bool _isLoadingStats = true;
+  Weather? _currentWeather;
+  bool _isLoadingWeather = true;
 
   @override
   void initState() {
     super.initState();
     _initMapKey();
     _syncHealth();
+    _loadWeather();
+  }
+
+  Future<void> _loadWeather() async {
+    setState(() => _isLoadingWeather = true);
+    try {
+      final weatherService = WeatherService();
+      final weather = await weatherService.getCurrentWeather();
+      setState(() {
+        _currentWeather = weather;
+        _isLoadingWeather = false;
+      });
+    } catch (e) {
+      print('Error loading weather: $e');
+      setState(() => _isLoadingWeather = false);
+    }
   }
 
   Future<void> _fetchTodayData() async {
@@ -449,6 +590,13 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final apiService = ApiService();
       await apiService.addVisit(locationId, 'Quick visit from home screen');
+
+      // Suppress notifications for the rest of today after recording a visit
+      final prefs = await SharedPreferences.getInstance();
+      final today = _todayKey();
+      await prefs.setString('visit_suppressed_date', today);
+      await NotificationService().cancelAll();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Visit to $locationName recorded!')),
@@ -505,7 +653,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           drawer: Drawer(
             child: ListView(
-              padding: EdgeInsets.zero,
+              padding: EdgeInsets.only(
+                top: 0,
+                bottom: MediaQuery.of(context).padding.bottom + 20,
+              ),
               children: [
                 DrawerHeader(
                   decoration: BoxDecoration(
@@ -756,10 +907,78 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               else
                 Container(color: Theme.of(context).scaffoldBackgroundColor),
-              Center(
+              SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const SizedBox(height: 40),
+                    // Weather Widget
+                    if (!_isLoadingWeather && _currentWeather != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const WeatherDetailScreen(),
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: containerColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (_currentWeather!.weatherIcon != null)
+                                      Image.network(
+                                        WeatherService().getWeatherIconUrl(_currentWeather!.weatherIcon),
+                                        width: 60,
+                                        height: 60,
+                                      ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          WeatherService().formatTemperature(_currentWeather!.temperature?.celsius),
+                                          style: TextStyle(
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor,
+                                          ),
+                                        ),
+                                        Text(
+                                          _currentWeather!.areaName ?? 'Local Weather',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: textColor.withOpacity(0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(Icons.chevron_right, color: textColor.withOpacity(0.5)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
                     if (_isLoadingStats)
                       CircularProgressIndicator(color: textColor)
                     else

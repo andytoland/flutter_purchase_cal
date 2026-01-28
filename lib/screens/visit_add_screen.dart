@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../models/location.dart';
+import '../services/notification_service.dart';
 
 class VisitAddScreen extends StatefulWidget {
   const VisitAddScreen({super.key});
@@ -83,6 +85,14 @@ class _VisitAddScreenState extends State<VisitAddScreen> {
         _selectedLocationId!,
         _descriptionController.text,
       );
+
+      // Suppress notifications for the rest of today and cancel any shown
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      await prefs.setString('visit_suppressed_date', today);
+      await NotificationService().cancelAll();
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Visit recorded successfully!')),
