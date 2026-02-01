@@ -606,4 +606,43 @@ class ApiService {
       throw Exception('Error fetching GCP billing: $e');
     }
   }
+
+  // Daily Health Methods
+  Future<void> syncDailyHealth(Map<String, dynamic> data) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/health/sync',
+        data: data,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to sync daily health. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error syncing daily health: $e');
+    }
+  }
+
+  Future<List<dynamic>> getDailyHealth(String startDate) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/fitness/health/daily',
+        data: {'date': startDate},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data;
+      } else {
+        throw Exception(
+          'Failed to fetch daily health. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching daily health: $e');
+    }
+  }
 }
