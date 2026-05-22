@@ -89,35 +89,116 @@ class HealthService {
   Future<void> _syncOtherHealthData(
       ApiService apiService, DateTime start, DateTime end, String dateStr) async {
     try {
-      // Fetch Health Data
-      List<HealthDataPoint> data = await health.getHealthDataFromTypes(
+      final dayStart = DateTime.parse(dateStr); // 00:00:00
+      final sleepWindowStart = dayStart.subtract(const Duration(hours: 12)); // Day X-1 12:00
+      final sleepWindowEnd = dayStart.add(const Duration(hours: 23, minutes: 59));
+
+      print("Fetching health data for $dateStr (Window: $sleepWindowStart to $sleepWindowEnd)");
+
+      // 2. Fetch Sleep Data
+      List<HealthDataPoint> sleepData = await health.getHealthDataFromTypes(
+        types: [
+          HealthDataType.SLEEP_ASLEEP,
+          HealthDataType.SLEEP_IN_BED,
+        ],
+        startTime: sleepWindowStart,
+        endTime: sleepWindowEnd,
+      );
+
+      print("Fetched ${sleepData.length} sleep data points");
+
+      // 3. Filter Sleep
+      List<HealthDataPoint> validSleepSegments = [];
+      List<HealthDataPoint> asleepSegments = [];
+      List<HealthDataPoint> inBedSegments = [];
+      int sleepMinutes = 0;
+
+      for (var point in sleepData) {
+        // We only care about segments that strictly END on the target day's period (morning of Day X)
+        // Or broadly, segments that "belong" to the night leading into Day X.
+        // A segment ending at 8am on Day X belongs to Day X.
+        // A segment ending at 11pm on Day X-1 belongs to Day X-1 (yesterday).
+        // So check: dateTo is on Day X (OR dateTo is late Day X-1?? No, typically we sleep into Day X).
+        // Let's stick to "Ends on Day X".
+        
+         if (point.dateTo.isAfter(dayStart) && point.dateTo.day == dayStart.day) {
+             validSleepSegments.add(point);
+             if (point.type == HealthDataType.SLEEP_ASLEEP) {
+               asleepSegments.add(point);
+             } else if (point.type == HealthDataType.SLEEP_IN_BED) {
+               inBedSegments.add(point);
+             }
+         }
+      }
+
+      // Calculate Sleep Minutes
+      // Prioritize ASLEEP. If ASLEEP exists, sum it.
+      // If NO ASLEEP exists (e.g. no Watch), fallback to IN_BED.
+      if (asleepSegments.isNotEmpty) {
+         for (var seg in asleepSegments) {
+            sleepMinutes += seg.dateTo.difference(seg.dateFrom).inMinutes;
+         }
+      } else if (inBedSegments.isNotEmpty) {
+         print("No ASLEEP data found, falling back to IN_BED");
+         for (var seg in inBedSegments) {
+            sleepMinutes += seg.dateTo.difference(seg.dateFrom).inMinutes;
+         }
+      }
+
+      print("Calculated sleep minutes: $sleepMinutes (Asleep: ${asleepSegments.length}, InBed: ${inBedSegments.length})");
+
+      // 4. Determine Window for HRV/RHR
+      // If we have sleep segments, use their MIN start and MAX end.
+      DateTime? filterStart;
+      DateTime? filterEnd;
+
+      if (validSleepSegments.isNotEmpty) {
+         final starts = validSleepSegments.map((e) => e.dateFrom).toList();
+         final ends = validSleepSegments.map((e) => e.dateTo).toList();
+         starts.sort((a, b) => a.compareTo(b));
+         ends.sort((a, b) => a.compareTo(b));
+         filterStart = starts.first;
+         filterEnd = ends.last;
+         print("Sleep Window Found: $filterStart to $filterEnd");
+      } else {
+         // Fallback: Assume sleep was 10 PM Day X-1 to 10 AM Day X
+         print("No sleep data found, using default Night Window for HRV/RHR");
+         filterStart = dayStart.subtract(const Duration(hours: 2)); // 10 PM yesterday
+         filterEnd = dayStart.add(const Duration(hours: 10)); // 10 AM today
+      }
+
+      // 5. Fetch HRV/RHR for the broad window (fetch slightly wider to be safe)
+      List<HealthDataPoint> heartData = await health.getHealthDataFromTypes(
         types: [
           HealthDataType.HEART_RATE_VARIABILITY_SDNN,
           HealthDataType.RESTING_HEART_RATE,
-          HealthDataType.SLEEP_ASLEEP,
         ],
-        startTime: start,
-        endTime: end,
+        startTime: sleepWindowStart,
+        endTime: sleepWindowEnd,
       );
-
-      double? hrv;
-      double? rhr;
-      int sleepMinutes = 0;
+      
+      print("Fetched ${heartData.length} heart data points");
 
       List<double> hrvValues = [];
       List<double> rhrValues = [];
 
-      for (var point in data) {
-        if (point.type == HealthDataType.HEART_RATE_VARIABILITY_SDNN) {
-           final val = point.value as NumericHealthValue;
-           hrvValues.add(double.parse(val.numericValue.toString()));
-        } else if (point.type == HealthDataType.RESTING_HEART_RATE) {
-           final val = point.value as NumericHealthValue;
-           rhrValues.add(double.parse(val.numericValue.toString()));
-        } else if (point.type == HealthDataType.SLEEP_ASLEEP) {
-           sleepMinutes += point.dateTo.difference(point.dateFrom).inMinutes;
-        }
+      for (var point in heartData) {
+         // Filter strictly within our determined "Sleep/Night Window"
+         if (point.dateFrom.isAfter(filterStart!.subtract(const Duration(minutes: 1))) && 
+             point.dateTo.isBefore(filterEnd!.add(const Duration(minutes: 1)))) {
+            
+            if (point.type == HealthDataType.HEART_RATE_VARIABILITY_SDNN) {
+                final val = point.value as NumericHealthValue;
+                hrvValues.add(double.parse(val.numericValue.toString()));
+            } else if (point.type == HealthDataType.RESTING_HEART_RATE) {
+                final val = point.value as NumericHealthValue;
+                rhrValues.add(double.parse(val.numericValue.toString()));
+            }
+         }
       }
+
+      double? hrv;
+      double? rhr;
 
       if (hrvValues.isNotEmpty) {
         hrv = hrvValues.reduce((a, b) => a + b) / hrvValues.length;
@@ -125,6 +206,8 @@ class HealthService {
       if (rhrValues.isNotEmpty) {
         rhr = rhrValues.reduce((a, b) => a + b) / rhrValues.length;
       }
+      
+      print("Final values - Sleep: $sleepMinutes, HRV: $hrv, RHR: $rhr");
 
       if (hrv != null || rhr != null || sleepMinutes > 0) {
         final healthData = {
@@ -133,11 +216,12 @@ class HealthService {
           if (rhr != null) 'restingHeartRate': rhr.round(),
           if (sleepMinutes > 0) 'sleepMinutes': sleepMinutes,
         };
-        print("Syncing health data for $dateStr: $healthData");
+        print("Syncing Refined health data for $dateStr: $healthData");
         await apiService.syncDailyHealth(healthData);
       }
-    } catch (e) {
-      print("Error syncing other health data for $dateStr: $e");
+    } catch (e, stack) {
+      print("Error syncing refined health data for $dateStr: $e");
+      print(stack);
     }
   }
 
