@@ -26,6 +26,7 @@ import 'screens/daily_steps_list_screen.dart';
 import 'screens/workout_list_screen.dart';
 import 'screens/exercise_list_screen.dart';
 import 'screens/gcp_billing_screen.dart';
+import 'screens/todo_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'models/location.dart' as model;
 import 'theme/theme_manager.dart';
@@ -858,6 +859,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ExerciseListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.check_box),
+                  title: const Text('To Do List'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TodoScreen(),
                       ),
                     );
                   },

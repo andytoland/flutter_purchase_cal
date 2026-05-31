@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/purchase.dart';
+import '../models/todo.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -604,6 +605,73 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error fetching GCP billing: $e');
+    }
+  }
+
+  // Todo Methods
+  Future<void> addTodo(String task, DateTime dueDate) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/todo',
+        data: {'task': task, 'dueDate': dueDate.toIso8601String()},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to add task. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error adding task: $e');
+    }
+  }
+
+  Future<List<Todo>> getTodos() async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.get('$baseUrl/todo');
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = response.data;
+        return data.map((json) => Todo.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to load tasks. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error fetching tasks: $e');
+    }
+  }
+
+  Future<void> deleteTodo(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.delete('$baseUrl/todo/$id');
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to delete task. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error deleting task: $e');
+    }
+  }
+
+  Future<void> toggleTodo(int id) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.patch('$baseUrl/todo/$id/toggle');
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(
+          'Failed to toggle task. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error toggling task: $e');
     }
   }
 }
