@@ -215,8 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initMapKey();
-    _syncHealth();
+    _fetchTodayData();    // Load dashboard data IMMEDIATELY (cache first, then network)
     _loadWeather();
+    _syncHealth();        // Fire-and-forget; refresh UI after sync completes
   }
 
   Future<void> _loadWeather() async {
@@ -242,23 +243,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     print("--- Fetching Today's Data ($dateStr) ---");
 
-    // 1. Load from Cache first for immediate UI feedback
+    // 1. Load from Cache first for immediate UI feedback (parallel)
     try {
-      final cachedSteps = await apiService.getCachedDailySteps(dateStr);
-      if (cachedSteps != null) {
-        _processStepsData(cachedSteps, dateStr);
-        print("Steps loaded from cache");
-      }
-
       final startDate = now.subtract(const Duration(days: 2));
       final endDate = now.add(const Duration(days: 1));
       final startStr = DateFormat('yyyy-MM-dd').format(startDate);
       final endStr = DateFormat('yyyy-MM-dd').format(endDate);
 
-      final cachedSpending = await apiService.getCachedSpendings(
-        startDate: startStr,
-        endDate: endStr,
-      );
+      final results = await Future.wait([
+        apiService.getCachedDailySteps(dateStr),
+        apiService.getCachedSpendings(startDate: startStr, endDate: endStr),
+      ]);
+
+      final cachedSteps = results[0] as List<dynamic>?;
+      final cachedSpending = results[1] as List<dynamic>?;
+
+      if (cachedSteps != null) {
+        _processStepsData(cachedSteps, dateStr);
+        print("Steps loaded from cache");
+      }
       if (cachedSpending != null) {
         _processSpendingData(cachedSpending, now);
         print("Spending loaded from cache");
@@ -617,6 +620,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _syncHealth() async {
     final healthService = HealthService();
     await healthService.syncSteps();
+    // After sync completes, refresh the dashboard with fresh data
     await _fetchTodayData();
   }
 
