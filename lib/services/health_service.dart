@@ -60,7 +60,8 @@ class HealthService {
       final apiService = ApiService();
       final now = DateTime.now();
 
-      for (int i = 0; i < 7; i++) {
+      // Sync all 7 days in parallel for faster startup
+      await Future.wait(List.generate(7, (i) async {
         final date = now.subtract(Duration(days: i));
         final midnight = DateTime(date.year, date.month, date.day);
         final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
@@ -75,7 +76,7 @@ class HealthService {
 
         // 2. Sync Other Health Data (Sleep, HRV, RHR)
         await _syncOtherHealthData(apiService, midnight, endTime, dateStr);
-      }
+      }));
 
       // Also sync workouts
       await syncWorkouts();

@@ -6,6 +6,7 @@ import 'package:workmanager/workmanager.dart';
 import 'services/health_service.dart';
 import 'services/weather_service.dart';
 import 'screens/purchase_list_screen.dart';
+import 'screens/purchase_import_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/weather_detail_screen.dart';
 import 'package:weather/weather.dart';
@@ -691,6 +692,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const PurchaseListScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.upload_file),
+                  title: const Text('Import Bank Statement'),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PurchaseImportScreen(),
                       ),
                     );
                   },

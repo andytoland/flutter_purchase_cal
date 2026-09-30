@@ -52,6 +52,9 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   weather: ^3.1.1
 
+  # Bank statement CSV import (Aktia, Nordea, S-Pankki)
+  file_picker: ^8.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

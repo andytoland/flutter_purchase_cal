@@ -123,6 +123,36 @@ class ApiService {
     }
   }
 
+  /// Imports a bank statement CSV (Aktia, Nordea, S-Pankki).
+  /// Returns { bank, parsed, imported, duplicates }.
+  Future<Map<String, dynamic>> importPurchases({
+    required String content,
+    String? bank,
+    String? filename,
+  }) async {
+    try {
+      final baseUrl = await getBaseUrl();
+      final response = await _dio.post(
+        '$baseUrl/purchase/import',
+        data: {
+          'content': content,
+          if (bank != null && bank.isNotEmpty) 'bank': bank,
+          if (filename != null && filename.isNotEmpty) 'filename': filename,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return Map<String, dynamic>.from(response.data);
+      } else {
+        throw Exception(
+          'Failed to import purchases. Status code: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error importing purchases: $e');
+    }
+  }
+
   // Location Methods
   Future<List<dynamic>> getLocations() async {
     try {
